@@ -1,6 +1,6 @@
 # Course Site
 
-* http://www.ccs.neu.edu/course/cs4500wc/
+* Clinger: http://www.ccs.neu.edu/course/cs4500wc/
 
 #Important Links:
 
