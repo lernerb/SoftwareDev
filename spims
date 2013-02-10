@@ -44,12 +44,10 @@ def main(argv):
       if opt == '-p':
          patternImageName = arg.rpartition('/')[2]
          patternImage = Image.open(arg)
-         print 'Pattern Image is', arg
          #TODO: Make sure that patternImage is valid
       elif opt == '-s':
          sourceImageName = arg.rpartition('/')[2]
          sourceImage = Image.open(arg)
-         print 'Source image is', arg
          #TODO: Make sure that sourceImage is valid
   
    #Compare the images      
