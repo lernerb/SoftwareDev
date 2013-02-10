@@ -18,7 +18,7 @@ Add ./ to your path in order to run `./spims`.
 ##### Running
 The software can be invoked using the format specified in the assignment. For convenience it has been duplicated here:
 
-    ./spims -m <file1> -s <file2>
+    ./spims -p <file1> -s <file2>
 
 where:
  * `<file1>` is the name of an existing file in JPEG, PNG, or GIF format without animation (the "pattern image")
