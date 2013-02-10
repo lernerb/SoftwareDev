@@ -4,7 +4,7 @@ import sys, getopt, datetime
 from PIL import Image
 from PIL import ImageChops
 
-def matchTemplate(searchImage, templateImage):
+def matchTemplate(searchImage, templateImage, searchName, templateName):
     minScore = -1000
     matching_xs = 0
     matching_ys = 0
@@ -26,12 +26,15 @@ def matchTemplate(searchImage, templateImage):
                 minScore = score
                 matching_xs = xs
                 matching_ys = ys
-
-    print "Location=",(matching_xs, matching_ys), "Score=",minScore
-
+    
+    if minScore > 1000:    
+        print "%s matches %s at %ix%i+%i+%i" % (templateName, searchName, templateWidth, templateHeight, matching_xs, matching_ys)
+ 
 def main(argv):
    patternImage = ''
    sourceImage = ''
+   patternImageName = ''
+   sourceImageName = ''
    try:
       opts, args = getopt.getopt(argv,"p:s:")
    except getopt.GetoptError:
@@ -39,15 +42,19 @@ def main(argv):
       sys.exit(2)
    for opt, arg in opts:
       if opt == '-p':
+         patternImageName = arg.rpartition('/')[2]
          patternImage = Image.open(arg)
          print 'Pattern Image is', arg
          #TODO: Make sure that patternImage is valid
       elif opt == '-s':
+         sourceImageName = arg.rpartition('/')[2]
          sourceImage = Image.open(arg)
          print 'Source image is', arg
          #TODO: Make sure that sourceImage is valid
-   matchTemplate(sourceImage,patternImage)
-   print "PROGRAM COMPLETE"
+  
+   #Compare the images      
+   matchTemplate(sourceImage,patternImage,sourceImageName,patternImageName)
+   
 
 if __name__ == "__main__":
    main(sys.argv[1:])
