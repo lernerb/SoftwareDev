@@ -30,29 +30,3 @@ where:
    * scipy
    * PIL
 
-
-
-========================
-
-1.  lists all members of your team,
-2.  gives the preferred email address(es) for contacting
-    your team,
-3.  tells the grader(s) how your team's rapid prototype
-    can be compiled and run on any CCIS Linux machine in
-    the main lab,
-4.  acknowledges any third party software used (by permission!)
-    in your submitted software.
-
-
-
-#Important Links:
-
-* http://www.fmwconcepts.com/imagemagick/fourier_transforms/fourier.html#normcrosscorr
-
-
-##Things we need for the readme
-
-* Test plan
-* How to run
-* Compile scripts
-*another thing..
