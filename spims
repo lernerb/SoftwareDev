@@ -5,19 +5,6 @@ from PIL import Image
 from PIL import ImageChops
 
 def matchTemplate(patternArg, sourceArg):
-    try:
-        validTypes = ['gif', 'jpeg', 'png']
-        sourceType = imghdr.what(sourceArg)
-        patternType = imghdr.what(patternArg)
-    
-        if sourceType not in validTypes or patternType not in validTypes:
-            print >> sys.stderr, 'Error: Provided images must be GIF, JPEG, or PNG!'
-            return -1
-
-    except IOError as e:
-        print >> sys.stderr, 'Error: Image files cannot be found!'
-        return -1
-
     # Renamed Template to Pattern and Search to Source
     sourceName = sourceArg.rpartition('/')[2]
     sourceImage = Image.open(sourceArg)
@@ -51,7 +38,32 @@ def matchTemplate(patternArg, sourceArg):
     #TODO: Figure out what number to put here
     if minScore > 0:    
         print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, matching_xs, matching_ys)
-        return 0
+    
+    # Function completed sucessfully    
+    return 0
+
+def isInputValid(patternArg, sourceArg):
+    # Make sure both args were specified
+    if not patternArg or not sourceArg:
+        print >> sys.stderr, 'Error: Invalid Arguments. Must provide a pattern(-p) and source(-s) image!'
+        return False
+
+    # Make sure images exist and are of the correct type
+    try:
+        validTypes = ['gif', 'jpeg', 'png']
+        sourceType = imghdr.what(sourceArg)
+        patternType = imghdr.what(patternArg)
+
+        if sourceType not in validTypes or patternType not in validTypes:
+            print >> sys.stderr, 'Error: Provided images must be GIF, JPEG, or PNG!'
+            return False
+
+    except IOError as e:
+        print >> sys.stderr, 'Error: Image files cannot be found!'
+        return False
+
+    # Arguments are valid
+    return True
 
 def main(argv):
     parser = optparse.OptionParser(description='Software Dev Image Matching Software')
@@ -59,11 +71,11 @@ def main(argv):
     parser.add_option('-s', '--source', dest='source', help='The source image to search in')
     (options, args) = parser.parse_args()
 
-    if not options.pattern or not options.source:
-        print >> sys.stderr, 'Error: Invalid Arguments. Must provide a pattern(-p) and source(-s) image!'
-        return -1
-
-    return matchTemplate(options.pattern, options.source)   
+    if isInputValid(options.pattern, options.source):
+        return matchTemplate(options.pattern, options.source)   
+   
+    # Arguments were invalid 
+    return -1
 
 if __name__ == "__main__":
     main(sys.argv[1:])
