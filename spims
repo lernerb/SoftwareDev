@@ -47,21 +47,40 @@ def matchTemplate(patternArg, sourceArg):
                 minScore = score
                 matching_xs = xs
                 matching_ys = ys
-    
+
     #TODO: Figure out what number to put here
-    if minScore > 0:    
-        print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, matching_xs, matching_ys)
+    if minScore > (patternWidth * patternHeight * .1):    
+         print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, matching_xs, matching_ys)
     
     # Function completed sucessfully    
     return 0
 
-def isInputValid(patternArg, sourceArg):
+def printError(error, testerFlag):
+    """
+    Prints errors after appending 'Error: ' to the front of them.
+
+    Arguments:
+    error -- The error string to be printed
+    testerFlag -- True if SPIMS is being run by the tester
+
+    Errors are normally printed to standard error, but if SPIMS is 
+    being run by the tester they are printed to standard out.
+
+    """
+
+    if testerFlag:
+        print 'Error: ' + error
+    else:
+        print >> sys.stderr, 'Error: ' + error
+
+def isInputValid(patternArg, sourceArg, testerFlag):
     """
     Determines whether or not the provided arguments are valid.
 
     Arguments:
     patternArg -- The path to the pattern Image
     sourceArg -- The path to the source Image
+    testerFlag -- True if SPIMS is being run by the tester
 
     Returns True if the arguments are valid, otherwise returns False.
 
@@ -69,7 +88,7 @@ def isInputValid(patternArg, sourceArg):
     
     # Make sure both args were specified
     if not patternArg or not sourceArg:
-        print >> sys.stderr, 'Error: Invalid Arguments. Must provide a pattern(-p) and source(-s) image!'
+        printError('Invalid Arguments. Must provide a pattern(-p) and source(-s) image!', testerFlag)
         return False
 
     # Make sure images exist and are of the correct type
@@ -79,11 +98,11 @@ def isInputValid(patternArg, sourceArg):
         patternType = imghdr.what(patternArg)
 
         if sourceType not in validTypes or patternType not in validTypes:
-            print >> sys.stderr, 'Error: Provided images must be GIF, JPEG, or PNG!'
+            printError('Provided images must be GIF, JPEG, or PNG!', testerFlag)
             return False
 
     except IOError as e:
-        print >> sys.stderr, 'Error: Image files cannot be found!'
+        printError('Image files cannot be found!', testerFlag)
         return False
 
     # Arguments are valid
@@ -93,9 +112,10 @@ def main(argv):
     parser = optparse.OptionParser(description='Software Dev Image Matching Software')
     parser.add_option('-p', '--pattern', dest='pattern', help='The pattern or template image to be found')
     parser.add_option('-s', '--source', dest='source', help='The source image to search in')
+    parser.add_option('-t', '--tester', dest='tester', help=optparse.SUPPRESS_HELP, action="store_true")
     (options, args) = parser.parse_args()
 
-    if isInputValid(options.pattern, options.source):
+    if isInputValid(options.pattern, options.source, options.tester):
         return matchTemplate(options.pattern, options.source)   
    
     # Arguments were invalid 

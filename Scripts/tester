@@ -4,9 +4,7 @@ if ($#ARGV < 0) {
     error("Usage: ./test <assignment>");
 }
 
-
 foreach $problem (@ARGV) {
-
     if (! (-e "./problems/$problem")) {
         error("Unable to find tests for '$problem'.");
     }
@@ -29,49 +27,47 @@ sub clr_line(){
     print "\r";
     print " " x 80;
     print "\r";
-
 }
 
 sub test {
     my ($problem) = @_;
 
-    print "Testing $problem\n";
+    print "\nTesting $problem:\n";
 
     my $tests = "./problems/$problem";
     my $solutions = "./solutions/$problem";
 
-
     open(my $th, '<:encoding(UTF-8)', $tests)
-      or die "Could not open file '$tests' $!";
+      or die "Could not open problems file '$tests' $!";
 
     open(my $sh, '<:encoding(UTF-8)', $solutions)
-      or die "Could not open file '$solutions' $!";
+      or die "Could not open solutions file '$solutions' $!";
 
     while (my $test = <$th>){
         chomp $test;
+
         if (my $solution = <$sh>){
             chomp $solution;
 
-            print "[    ] Testing for \"$solution\"";  
+            print "[    ] Test: \"\./spims $test\"";  
 
-            my $actual = `../spims $test`;
+            my $actual = `../spims $test -t`;
             my $expected = $solution;
 
             if (trim($actual) eq trim($expected)){
+                chomp $actual;
                 clr_line();
-                print "[PASS] \"$solution\"\n";
+                print "[PASS] Test: \"\./spims $test\"\n";
+                print "       Output: $actual\n\n";
             } else {
+                chomp $actual;
                 clr_line();
-                print "[FAIL]\n";
-                print "    Expected output: $solution\n    Actual output:   $actual\n";
+                print "[FAIL] Test: \"\./spims $test\"\n";
+                print "       Expected output: $solution\n       Actual output  : $actual\n\n";
                 #exit(-1);
             }
-
         } else {
             warn "Found mismatched test/solution pair!";
         }
-        
-
     }
-
 }
