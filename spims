@@ -1,24 +1,45 @@
 #!/usr/bin/env python
 
-import sys, getopt, datetime
-from PIL import Image
-from PIL import ImageChops
+import sys
+import getopt
+import imghdr
+import optparse
+from PIL import Image, ImageChops
 
-def matchTemplate(searchImage, templateImage, searchName, templateName):
+def matchTemplate(patternArg, sourceArg):
+    """
+    Attempts to find the pattern image in the source image.
+
+    Arguments:
+    patternArg -- The path to the pattern image
+    sourceArg -- The path to the source image
+
+    Returns -1 if an error occurs, otherwise returns 0.
+    
+    """
+
+    # Renamed Template to Pattern and Search to Source
+    sourceName = sourceArg.rpartition('/')[2]
+    sourceImage = Image.open(sourceArg)
+    patternName = patternArg.rpartition('/')[2]
+    patternImage = Image.open(patternArg)
+
     minScore = -1000
     matching_xs = 0
     matching_ys = 0
-    searchImage = searchImage.convert(mode="L")
-    templateImage = templateImage.convert(mode="L")
-    searchWidth, searchHeight = searchImage.size
-    templateWidth, templateHeight = templateImage.size
-    templateMask = Image.new(mode="L", size=templateImage.size, color=1)
-    for xs in range(searchWidth-templateWidth+1):
-        for ys in range(searchHeight-templateHeight+1):
-            score = templateWidth*templateHeight
-            searchCrop = searchImage.crop((xs,ys,xs+templateWidth,ys+templateHeight))
-            diff = ImageChops.difference(templateImage, searchCrop)
-            notequal = ImageChops.darker(diff,templateMask)
+
+    sourceImage = sourceImage.convert(mode="L")
+    sourceWidth, sourceHeight = sourceImage.size
+    patternImage = patternImage.convert(mode="L")
+    patternWidth, patternHeight = patternImage.size
+    patternMask = Image.new(mode="L", size=patternImage.size, color=1)
+    
+    for xs in range(sourceWidth-patternWidth+1):
+        for ys in range(sourceHeight-patternHeight+1):
+            score = patternWidth*patternHeight
+            sourceCrop = sourceImage.crop((xs,ys,xs+patternWidth,ys+patternHeight))
+            diff = ImageChops.difference(patternImage, sourceCrop)
+            notequal = ImageChops.darker(diff,patternMask)
             countnotequal = sum(notequal.getdata())
             score -= countnotequal
 
@@ -27,32 +48,58 @@ def matchTemplate(searchImage, templateImage, searchName, templateName):
                 matching_xs = xs
                 matching_ys = ys
     
-    if minScore > 1000:    
-        print "%s matches %s at %ix%i+%i+%i" % (templateName, searchName, templateWidth, templateHeight, matching_xs, matching_ys)
- 
+    #TODO: Figure out what number to put here
+    if minScore > 0:    
+        print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, matching_xs, matching_ys)
+    
+    # Function completed sucessfully    
+    return 0
+
+def isInputValid(patternArg, sourceArg):
+    """
+    Determines whether or not the provided arguments are valid.
+
+    Arguments:
+    patternArg -- The path to the pattern Image
+    sourceArg -- The path to the source Image
+
+    Returns True if the arguments are valid, otherwise returns False.
+
+    """
+    
+    # Make sure both args were specified
+    if not patternArg or not sourceArg:
+        print >> sys.stderr, 'Error: Invalid Arguments. Must provide a pattern(-p) and source(-s) image!'
+        return False
+
+    # Make sure images exist and are of the correct type
+    try:
+        validTypes = ['gif', 'jpeg', 'png']
+        sourceType = imghdr.what(sourceArg)
+        patternType = imghdr.what(patternArg)
+
+        if sourceType not in validTypes or patternType not in validTypes:
+            print >> sys.stderr, 'Error: Provided images must be GIF, JPEG, or PNG!'
+            return False
+
+    except IOError as e:
+        print >> sys.stderr, 'Error: Image files cannot be found!'
+        return False
+
+    # Arguments are valid
+    return True
+
 def main(argv):
-   patternImage = ''
-   sourceImage = ''
-   patternImageName = ''
-   sourceImageName = ''
-   try:
-      opts, args = getopt.getopt(argv,"p:s:")
-   except getopt.GetoptError:
-      print './spims -p <FILE> -s <FILE>'
-      sys.exit(2)
-   for opt, arg in opts:
-      if opt == '-p':
-         patternImageName = arg.rpartition('/')[2]
-         patternImage = Image.open(arg)
-         #TODO: Make sure that patternImage is valid
-      elif opt == '-s':
-         sourceImageName = arg.rpartition('/')[2]
-         sourceImage = Image.open(arg)
-         #TODO: Make sure that sourceImage is valid
-  
-   #Compare the images      
-   matchTemplate(sourceImage,patternImage,sourceImageName,patternImageName)
+    parser = optparse.OptionParser(description='Software Dev Image Matching Software')
+    parser.add_option('-p', '--pattern', dest='pattern', help='The pattern or template image to be found')
+    parser.add_option('-s', '--source', dest='source', help='The source image to search in')
+    (options, args) = parser.parse_args()
+
+    if isInputValid(options.pattern, options.source):
+        return matchTemplate(options.pattern, options.source)   
    
+    # Arguments were invalid 
+    return -1
 
 if __name__ == "__main__":
-   main(sys.argv[1:])
+    main(sys.argv[1:])
