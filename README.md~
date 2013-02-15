@@ -29,11 +29,6 @@ Change directories into the Scripts folder and run the following
 
     ./tester assignment4
 
-The tester uses the first argument to determine what set of tests to run. `assignment4` is the set of tests specified in the assignment given by Professor Clinger.
-
-##### Additional notes
-It was discussed with Prof. Clinger on Feb 12 that additional line returns at the end of the execution of the program do not matter.
-
 ##### Third-Party Software Credits
  * Python 2.6
    * numpy

@@ -26,7 +26,6 @@ sub trim($){
 }
 
 sub clr_line(){
-    print "\r";
     print " " x 80;
     print "\r";
 
