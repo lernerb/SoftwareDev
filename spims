@@ -49,7 +49,7 @@ def matchTemplate(patternArg, sourceArg):
                 matching_ys = ys
 
     #TODO: Figure out what number to put here
-    if minScore > (patternWidth * patternHeight * .1):    
+    if minScore > (patternWidth * patternHeight * .03):    
          print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, matching_xs, matching_ys)
     
     # Function completed sucessfully    
