@@ -34,9 +34,7 @@ The tester uses the first argument to determine what set of tests to run. `assig
 ##### Additional notes
 It was discussed with Prof. Clinger on Feb 12 that additional line returns at the end of the execution of the program do not matter.
 
-##### Third-Party Software Credits
- * Python 2.6
-   * numpy
-   * scipy
-   * PIL
+##### Software Credits
+ * Python 2.6 
+
 
