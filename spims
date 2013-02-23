@@ -5,6 +5,13 @@ import getopt
 import imghdr
 import optparse
 from PIL import Image, ImageChops
+import numpy as np
+from numpy.linalg import norm
+from scipy import signal
+from scipy import ndimage
+
+#import numpy as np
+#from numpy.linalg import norm
 
 def matchTemplate(patternArg, sourceArg):
     """
@@ -18,40 +25,27 @@ def matchTemplate(patternArg, sourceArg):
     
     """
 
-    # Renamed Template to Pattern and Search to Source
+    # Convert Source Image into a numpy array grayscaled
     sourceName = sourceArg.rpartition('/')[2]
-    sourceImage = Image.open(sourceArg)
+    sourceArray = Image.open(sourceArg).convert('L')
+    numpySource = np.asarray(sourceArray)
+
+    # Convert Pattern Image into a numpy array grayscaled
     patternName = patternArg.rpartition('/')[2]
-    patternImage = Image.open(patternArg)
+    patternArray = Image.open(patternArg).convert('L')
+    numpyPattern = np.asarray(patternArray)
+ 
+    #Do a X-Normalized Correlation by convolving two numpy arrays
+    result = signal.fftconvolve(numpyPattern,numpySource,mode ='valid')
 
-    minScore = -1000
-    matching_xs = 0
-    matching_ys = 0
 
-    sourceImage = sourceImage.convert(mode="L")
-    sourceWidth, sourceHeight = sourceImage.size
-    patternImage = patternImage.convert(mode="L")
-    patternWidth, patternHeight = patternImage.size
-    patternMask = Image.new(mode="L", size=patternImage.size, color=1)
-    
-    for xs in range(sourceWidth-patternWidth+1):
-        for ys in range(sourceHeight-patternHeight+1):
-            score = patternWidth*patternHeight
-            sourceCrop = sourceImage.crop((xs,ys,xs+patternWidth,ys+patternHeight))
-            diff = ImageChops.difference(patternImage, sourceCrop)
-            notequal = ImageChops.darker(diff,patternMask)
-            countnotequal = sum(notequal.getdata())
-            score -= countnotequal
+    # And get our answer....
+    print np.unravel_index(result.argmax(),result.shape)
+    #When we get a result Numpy array, slice it into tuples to find all of the matches
+    #match_indices = np.arange(result.size)[(result>confidence).flatten()]
+    #print np.unravel_index(match_indices,result.shape)
 
-            if minScore < score:
-                minScore = score
-                matching_xs = xs
-                matching_ys = ys
-
-    #TODO: Figure out what number to put here
-    if minScore > (patternWidth * patternHeight * .03):    
-         print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, matching_xs, matching_ys)
-    
+    # print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)   
     # Function completed sucessfully    
     return 0
 
