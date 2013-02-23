@@ -34,18 +34,18 @@ def matchTemplate(patternArg, sourceArg):
     patternName = patternArg.rpartition('/')[2]
     patternArray = Image.open(patternArg).convert('L')
     numpyPattern = np.asarray(patternArray)
- 
-    #Do a X-Normalized Correlation by convolving two numpy arrays
-    result = signal.fftconvolve(numpyPattern,numpySource,mode ='valid')
 
+    #Do a X-Normalized Correlation by convolving two numpy arrays
+    result = signal.fftconvolve(numpySource, np.fliplr(np.flipud(numpyPattern)), 'full')
 
     # And get our answer....
     print np.unravel_index(result.argmax(),result.shape)
-    #When we get a result Numpy array, slice it into tuples to find all of the matches
+    print "(797+609) <=== Correct answer"
+    #When we have our cod working we can uncomment this and add a confidence to get matches
     #match_indices = np.arange(result.size)[(result>confidence).flatten()]
     #print np.unravel_index(match_indices,result.shape)
-
     # print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)   
+
     # Function completed sucessfully    
     return 0
 
