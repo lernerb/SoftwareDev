@@ -9,6 +9,7 @@ import numpy as np
 from numpy.linalg import norm
 from scipy import signal
 from scipy import ndimage
+import math
 
 #import numpy as np
 #from numpy.linalg import norm
@@ -29,14 +30,19 @@ def matchTemplate(patternArg, sourceArg):
     sourceName = sourceArg.rpartition('/')[2]
     sourceArray = Image.open(sourceArg).convert('L')
     numpySource = np.asarray(sourceArray)
+    numpySource.flags.writeable = True
 
     # Convert Pattern Image into a numpy array grayscaled
     patternName = patternArg.rpartition('/')[2]
     patternArray = Image.open(patternArg).convert('L')
     numpyPattern = np.asarray(patternArray)
+    numpyPattern.flags.writeable = True
+
+    numpySourcea = (numpySource - mean(numpySource)) / (std(numpySource) * len(numpySource))
+    numpyPattern = (numpyPattern - mean(numpyPattern)) /  std(numpyPattern)
 
     #Do a X-Normalized Correlation by convolving two numpy arrays
-    result = signal.fftconvolve(numpySource, np.fliplr(np.flipud(numpyPattern)), 'full')
+    result = signal.fftconvolve(numpySource, numpyPattern[::-1, ::-1])
 
     # And get our answer....
     print np.unravel_index(result.argmax(),result.shape)
