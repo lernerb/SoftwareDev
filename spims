@@ -9,18 +9,14 @@ import numpy as np
 from numpy.linalg import norm
 from scipy import signal
 from scipy import ndimage
-import math
-
-#import numpy as np
-#from numpy.linalg import norm
 
 def matchTemplate(patternArg, sourceArg):
     """
     Attempts to find the pattern image in the source image.
 
     Arguments:
-    patternArg -- The path to the pattern image
-    sourceArg -- The path to the source image
+    patternArg -- The path to the pattern image (small image) (template)
+    sourceArg -- The path to the source image (big image) (image)
 
     Returns -1 if an error occurs, otherwise returns 0.
     
@@ -38,15 +34,15 @@ def matchTemplate(patternArg, sourceArg):
     numpyPattern = np.asarray(patternArray)
     numpyPattern.flags.writeable = True
 
-    numpySourcea = (numpySource - mean(numpySource)) / (std(numpySource) * len(numpySource))
-    numpyPattern = (numpyPattern - mean(numpyPattern)) /  std(numpyPattern)
-
     #Do a X-Normalized Correlation by convolving two numpy arrays
     result = signal.fftconvolve(numpySource, numpyPattern[::-1, ::-1])
 
     # And get our answer....
+    print result
     print np.unravel_index(result.argmax(),result.shape)
     print "(797+609) <=== Correct answer"
+
+
     #When we have our cod working we can uncomment this and add a confidence to get matches
     #match_indices = np.arange(result.size)[(result>confidence).flatten()]
     #print np.unravel_index(match_indices,result.shape)
