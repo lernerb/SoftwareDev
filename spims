@@ -37,18 +37,13 @@ def matchTemplate(patternArg, sourceArg):
     numpyPattern.flags.writeable = True
     numpyPattern = np.ascontiguousarray(numpyPattern, dtype=np.float32)
 
-    """
-    #PADDING HERE
-    pad_size = tuple(np.array(numpySource.shape) + np.array(numpyPattern.shape) - 1)
-    pad_image = np.mean(numpySource) * np.ones(pad_size, dtype=np.float32)
-    h, w = numpySource.shape
-    i0, j0 = numpyPattern.shape
-    i0 /= 2
-    j0 /= 2
-    pad_image[i0:i0 + h, j0:j0 + w] = numpySource
-    numpySource = pad_image
-    """
+    sourceWidth, sourceHeight = sourceArray.size
+    patternWidth, patternHeight = patternArray.size
+
+
     #And back to work
+
+
 
     template_mean = np.mean(numpyPattern)
     template_rows = numpyPattern.shape[0]
@@ -68,23 +63,13 @@ def matchTemplate(patternArg, sourceArg):
                                                    mode="valid"),
                                 dtype=np.float32)
 
-   # print corr
 
+    ij = np.unravel_index(corr.argmax(), corr.shape)
+    m_xs, m_ys = ij[::-1]
 
+    #print np.unravel_index(corr.argmax(),corr.shape)
 
-    #Do a X-Normalized Correlation by convolving two numpy arrays
-    #result = normxcorr2D(numpySource,numpyPattern)
-    #result = signal.fftconvolve(numpySource, numpyPattern[::-1, ::-1], mode='same')
-    #print result
-
-    
-    # And get our answer....
-    #print result
-    print np.unravel_index(corr.argmax(),corr.shape)
-   # print "(797+609) <=== Correct answer"
-
-
-
+    """
     # move window through convolution results, normalizing in the process
     for r in range(corr.shape[0]):
         for c in range(corr.shape[1]):
@@ -102,13 +87,13 @@ def matchTemplate(patternArg, sourceArg):
 
             den = cmath.sqrt((window_sqr_sum - window_mean_sqr) * template_ssd)
             corr[r, c] /= den
+     """
 
-
-
+    
     #When we have our cod working we can uncomment this and add a confidence to get matches
     #match_indices = np.arange(result.size)[(result>confidence).flatten()]
     #print np.unravel_index(match_indices,result.shape)
-    # print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)   
+    print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)   
 
     # Function completed sucessfully    
     return 0
