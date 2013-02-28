@@ -46,16 +46,15 @@ def matchTemplate(patternArg, sourceArg):
 
 
     template_mean = np.mean(numpyPattern)
-    template_rows = numpyPattern.shape[0]
-    template_cols = numpyPattern.shape[1]
-    
-    image_sat = integral_image(numpySource)
-    image_sqr_sat = integral_image(numpySource**2)
+    #template_rows = numpyPattern.shape[0]
+    #template_cols = numpyPattern.shape[1]
+    #image_sat = integral_image(numpySource)
+    #image_sqr_sat = integral_image(numpySource**2)
 
     numpyPattern -= template_mean
-    template_ssd = np.sum(numpyPattern**2)
+    #template_ssd = np.sum(numpyPattern**2)
     # use inversed area for accuracy
-    inv_area = 1.0 / (numpyPattern.shape[0] * numpyPattern.shape[1])
+    #inv_area = 1.0 / (numpyPattern.shape[0] * numpyPattern.shape[1])
 
     # when `dtype=float` is used, ascontiguousarray returns ``double``.
     corr = np.ascontiguousarray(signal.fftconvolve(numpySource,
@@ -68,6 +67,11 @@ def matchTemplate(patternArg, sourceArg):
     m_xs, m_ys = ij[::-1]
 
     #print np.unravel_index(corr.argmax(),corr.shape)
+
+    #When we have our cod working we can uncomment this and add a confidence to get matches
+    #match_indices = np.arange(result.size)[(result>confidence).flatten()]
+    #print np.unravel_index(match_indices,result.shape)
+    print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)   
 
     """
     # move window through convolution results, normalizing in the process
@@ -88,13 +92,7 @@ def matchTemplate(patternArg, sourceArg):
             den = cmath.sqrt((window_sqr_sum - window_mean_sqr) * template_ssd)
             corr[r, c] /= den
      """
-
     
-    #When we have our cod working we can uncomment this and add a confidence to get matches
-    #match_indices = np.arange(result.size)[(result>confidence).flatten()]
-    #print np.unravel_index(match_indices,result.shape)
-    print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)   
-
     # Function completed sucessfully    
     return 0
 
