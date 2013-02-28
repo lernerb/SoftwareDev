@@ -3,13 +3,15 @@
 import sys
 import getopt
 import imghdr
-import optparse
-from PIL import Image, ImageChops
+import cmath
 import numpy as np
+from PIL import Image, ImageChops
 from numpy.linalg import norm
 from scipy import signal
 from scipy import ndimage
-import cmath
+from os import listdir
+from os.path import isdir, join
+
 
 def matchTemplate(patternArg, sourceArg):
     """
@@ -19,7 +21,7 @@ def matchTemplate(patternArg, sourceArg):
     patternArg -- The path to the pattern image (small image) (template)
     sourceArg -- The path to the source image (big image) (image)
 
-    Returns -1 if an error occurs, otherwise returns 0.
+    Returns True if completed successfully, otherwise returns False.
     
     """
 
@@ -57,8 +59,8 @@ def matchTemplate(patternArg, sourceArg):
     m_xs, m_ys = ij[::-1]
     print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)   
     
-    #Function Completed
-    return 0
+    #Exit Successfully
+    return True
 
 
 def normalize(array, imin = -1, imax = 1):
@@ -95,53 +97,170 @@ def printError(error, testerFlag):
     else:
         print >> sys.stderr, 'Error: ' + error
 
-def isInputValid(patternArg, sourceArg, testerFlag):
+def isValidType(filePath, testerFlag):
     """
-    Determines whether or not the provided arguments are valid.
+    Determines whether or not the provided path is a valid image.
 
     Arguments:
-    patternArg -- The path to the pattern Image
-    sourceArg -- The path to the source Image
+    filePath -- The path to the file we are checking
     testerFlag -- True if SPIMS is being run by the tester
 
-    Returns True if the arguments are valid, otherwise returns False.
+    Returns True if the file is a valid image, otherwise returns False.
 
     """
-    
-    # Make sure both args were specified
-    if not patternArg or not sourceArg:
-        printError('Invalid Arguments. Must provide a pattern(-p) and source(-s) image!', testerFlag)
-        return False
 
     # Make sure images exist and are of the correct type
     try:
-        validTypes = ['gif', 'jpeg', 'png']
-        sourceType = imghdr.what(sourceArg)
-        patternType = imghdr.what(patternArg)
+        if isdir(filePath):
+            printError('Provided directory contains subdirectories!', testerFlag)
+            return False
 
-        if sourceType not in validTypes or patternType not in validTypes:
+        validTypes = ['gif', 'jpeg', 'png']
+        fileType = imghdr.what(filePath)
+
+        if fileType not in validTypes:
             printError('Provided images must be GIF, JPEG, or PNG!', testerFlag)
             return False
 
     except IOError as e:
-        printError('Image files cannot be found!', testerFlag)
+        printError('Image file cannot be found!', testerFlag)
         return False
 
-    # Arguments are valid
+    # Image is valid
     return True
 
-def main(argv):
-    parser = optparse.OptionParser(description='Software Dev Image Matching Software')
-    parser.add_option('-p', '--pattern', dest='pattern', help='The pattern or template image to be found')
-    parser.add_option('-s', '--source', dest='source', help='The source image to search in')
-    parser.add_option('-t', '--tester', dest='tester', help=optparse.SUPPRESS_HELP, action="store_true")
-    (options, args) = parser.parse_args()
+def isAllValid(patterns, sources, testerFlag):
+    """
+    Determines whether or not the provided arguments are valid.
 
-    if isInputValid(options.pattern, options.source, options.tester):
-        return matchTemplate(options.pattern, options.source)   
+    Arguments:
+    patterns -- The list of pattern paths
+    sources -- The list of source paths
+    testerFlag -- True if SPIMS is being run by the tester
+
+    Returns True if all the arguments are valid, otherwise returns False.
+
+    """
+
+    # Make sure all patterns are valid
+    for pattern in patterns:
+        if not isValidType(pattern, testerFlag):
+            return False
+
+    # Make sure all sources are valid
+    for source in sources:
+        if not isValidType(source, testerFlag):
+            return False
+
+    # All are valid
+    return True
+
+def validateArgs(patternArg, patternDirArg, sourceArg, sourceDirArg, testerFlag):
+    """
+    Validates the arguments.
+
+    Arguments:
+    patternArg -- The path to the pattern image
+    patternDirArg -- The path to the directory of pattern images
+    sourceArg -- The path to the source image
+    sourceDirArg -- The path to the directory of source images
+    testerFlag -- True if SPIMS is being run by the tester
+
+    Returns False if any arguments are invalid, otherwise 
+    returns a tuple containing a list of patterns and a list of sources
+
+    """
+
+    # I originally had combined many these if statements, but decided to split them up
+    # so that it will give a more specific error message, and be easier to read.
+
+    # Make sure a pattern image is given
+    if not patternArg and not patternDirArg:
+        printError('Invalid Arguments. No pattern images provided!', testerFlag)
+        return False
+ 
+    # Make sure a source image is given
+    if not sourceArg and not sourceDirArg:
+        printError('Invalid Arguments. No source images provided!', testerFlag)
+        return False
+
+    # Make sure only one pattern arg is given
+    if patternArg and patternDirArg:
+        printError('Invalid Arguments. Must only provide one pattern argument!', testerFlag)
+        return False
+
+    # Make sure only one source arg is given
+    if sourceArg and sourceDirArg:
+        printError('Invalid Arguments. Must only provide one source argument!', testerFlag)
+        return False
+
+    # Creating lists of all patterns and sources
+    patterns = []
+    sources = []
+
+    # Add the existing arguments to the lists
+    if patternArg:
+        patterns.append(patternArg)
+    
+    if sourceArg:
+        sources.append(sourceArg)
+
+    if patternDirArg:
+        for patternName in listdir(patternDirArg):
+            patterns.append(join(patternDirArg, patternName))
+
+    if sourceDirArg:
+        for sourceName in listdir(sourceDirArg):
+            sources.append(join(sourceDirArg, sourceName))
+
+    # Make sure all paths are valid files
+    if isAllValid(patterns, sources, testerFlag):
+        return patterns, sources
+
+    return False
+
+def main(argv):
+    patternArg = None
+    patternDirArg = None
+    sourceArg = None
+    sourceDirArg = None
+    testerFlag = '-t' in argv
+    
+    if '-p' in argv:
+        i = argv.index('-p') + 1
+        if len(argv) > i:
+            patternArg = argv[i]
+
+    if '-pdir' in argv:
+        i = argv.index('-pdir') + 1
+        if len(argv) > i:
+            patternDirArg = argv[i]
+
+    if '-s' in argv:
+        i = argv.index('-s') + 1
+        if len(argv) > i:
+            sourceArg = argv[i]
+
+    if '-sdir' in argv:
+        i = argv.index('-sdir') + 1
+        if len(argv) > i:
+            sourceDirArg = argv[i]
+
+    paths = validateArgs(patternArg, patternDirArg, sourceArg, sourceDirArg, testerFlag)
+
+    if paths:
+        # If path is not false, then it is a tuple of the patterns and sources
+        patterns, sources = paths
+
+        # Try to find matches between all combinations of patterns and sources
+        for pattern in patterns:
+            for source in sources:
+                if not matchTemplate(pattern, source):
+                    # Error occured while finding a match. Stop and exit.
+                    return -1   
    
-    # Arguments were invalid 
-    return -1
+    # Program completed successfully 
+    return 1
 
 if __name__ == "__main__":
     main(sys.argv[1:])
