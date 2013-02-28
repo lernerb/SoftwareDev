@@ -41,112 +41,41 @@ def matchTemplate(patternArg, sourceArg):
     patternWidth, patternHeight = patternArray.size
 
 
-    #And back to work
-
-
-
+    # FFT Stuff + Normalization of the Numpy Array
     template_mean = np.mean(numpyPattern)
-    #template_rows = numpyPattern.shape[0]
-    #template_cols = numpyPattern.shape[1]
-    #image_sat = integral_image(numpySource)
-    #image_sqr_sat = integral_image(numpySource**2)
-
     numpyPattern -= template_mean
-    #template_ssd = np.sum(numpyPattern**2)
-    # use inversed area for accuracy
-    #inv_area = 1.0 / (numpyPattern.shape[0] * numpyPattern.shape[1])
 
-    # when `dtype=float` is used, ascontiguousarray returns ``double``.
     corr = np.ascontiguousarray(signal.fftconvolve(numpySource,
                                                    numpyPattern[::-1, ::-1],
                                                    mode="valid"),
                                 dtype=np.float32)
 
+    #normalize(corr)
 
+    # Find the max value and print it
     ij = np.unravel_index(corr.argmax(), corr.shape)
     m_xs, m_ys = ij[::-1]
-
-    #print np.unravel_index(corr.argmax(),corr.shape)
-
-    #When we have our cod working we can uncomment this and add a confidence to get matches
-    #match_indices = np.arange(result.size)[(result>confidence).flatten()]
-    #print np.unravel_index(match_indices,result.shape)
     print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)   
-
-    """
-    # move window through convolution results, normalizing in the process
-    for r in range(corr.shape[0]):
-        for c in range(corr.shape[1]):
-            # subtract 1 because `i_end` and `c_end` are used for indexing into
-            # summed-area table, instead of slicing windows of the image.
-            r_end = r + template_rows - 1
-            c_end = c + template_cols - 1
-
-            window_sum = integrate(image_sat, r, c, r_end, c_end)
-            window_mean_sqr = window_sum * window_sum * inv_area
-            window_sqr_sum = integrate(image_sqr_sat, r, c, r_end, c_end)
-            if window_sqr_sum <= window_mean_sqr:
-                corr[r, c] = 0
-                continue
-
-            den = cmath.sqrt((window_sqr_sum - window_mean_sqr) * template_ssd)
-            corr[r, c] /= den
-     """
     
-    # Function completed sucessfully    
+    #Function Completed
     return 0
 
 
-def integral_image(x):
-    """Integral image / summed area table.
-
-    Parameters
-    ----------
-    x : ndarray
-        Input image.
-
-    Returns
-    -------
-    S : ndarray
-        Integral image / summed area table.
-
+def normalize(array, imin = -1, imax = 1):
     """
-    return x.cumsum(1).cumsum(0)
-
-
-def integrate(sat, r0, c0,r1, c1):
-    """
-    Using a summed area table / integral image, calculate the sum
-    over a given window.
-
-    Parameters
-    ----------
-    sat : ndarray of float
-        Summed area table / integral image.
-    r0, c0 : int
-        Top-left corner of block to be summed.
-    r1, c1 : int
-        Bottom-right corner of block to be summed.
-
-    Returns
-    -------
-    S : int
-        Sum over the given window.
+    I = Imin + (Imax-Imin)*(D-Dmin)/(Dmax-Dmin)
     """
 
-    S = 0
+    dmin = array.min()
+    dmax = array.max()
 
-    S += sat[r1, c1]
 
-    if (r0 - 1 >= 0) and (c0 - 1 >= 0):
-        S += sat[r0 - 1, c0 - 1]
+    array -= dmin;
+    array *= (imax - imin)
+    array /= (dmax-dmin)
+    array += imin
 
-    if (r0 - 1 >= 0):
-        S -= sat[r0 - 1, c1]
-
-    if (c0 - 1 >= 0):
-        S -= sat[r1, c0 - 1]
-    return S
+    return array
 
 def printError(error, testerFlag):
     """
