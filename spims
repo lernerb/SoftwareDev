@@ -3,58 +3,81 @@
 import sys
 import getopt
 import imghdr
+import cmath
+import numpy as np
 from PIL import Image, ImageChops
+from numpy.linalg import norm
+from scipy import signal
+from scipy import ndimage
 from os import listdir
 from os.path import isdir, join
+
 
 def matchTemplate(patternArg, sourceArg):
     """
     Attempts to find the pattern image in the source image.
 
     Arguments:
-    patternArg -- The path to the pattern image
-    sourceArg -- The path to the source image
+    patternArg -- The path to the pattern image (small image) (template)
+    sourceArg -- The path to the source image (big image) (image)
 
     Returns True if completed successfully, otherwise returns False.
     
     """
 
-    # Renamed Template to Pattern and Search to Source
+    # Convert Source Image into a numpy array grayscaled
     sourceName = sourceArg.rpartition('/')[2]
-    sourceImage = Image.open(sourceArg)
+    sourceArray = Image.open(sourceArg).convert('L')
+    numpySource = np.asarray(sourceArray)
+    numpySource.flags.writeable = True
+    numpySource = np.ascontiguousarray(numpySource, dtype=np.float32)
+
+    # Convert Pattern Image into a numpy array grayscaled
     patternName = patternArg.rpartition('/')[2]
-    patternImage = Image.open(patternArg)
+    patternArray = Image.open(patternArg).convert('L')
+    numpyPattern = np.asarray(patternArray)
+    numpyPattern.flags.writeable = True
+    numpyPattern = np.ascontiguousarray(numpyPattern, dtype=np.float32)
 
-    minScore = -1000
-    matching_xs = 0
-    matching_ys = 0
+    sourceWidth, sourceHeight = sourceArray.size
+    patternWidth, patternHeight = patternArray.size
 
-    sourceImage = sourceImage.convert(mode="L")
-    sourceWidth, sourceHeight = sourceImage.size
-    patternImage = patternImage.convert(mode="L")
-    patternWidth, patternHeight = patternImage.size
-    patternMask = Image.new(mode="L", size=patternImage.size, color=1)
+
+    # FFT Stuff + Normalization of the Numpy Array
+    template_mean = np.mean(numpyPattern)
+    numpyPattern -= template_mean
+
+    corr = np.ascontiguousarray(signal.fftconvolve(numpySource,
+                                                   numpyPattern[::-1, ::-1],
+                                                   mode="valid"),
+                                dtype=np.float32)
+
+    #normalize(corr)
+
+    # Find the max value and print it
+    ij = np.unravel_index(corr.argmax(), corr.shape)
+    m_xs, m_ys = ij[::-1]
+    print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)   
     
-    for xs in range(sourceWidth-patternWidth+1):
-        for ys in range(sourceHeight-patternHeight+1):
-            score = patternWidth*patternHeight
-            sourceCrop = sourceImage.crop((xs,ys,xs+patternWidth,ys+patternHeight))
-            diff = ImageChops.difference(patternImage, sourceCrop)
-            notequal = ImageChops.darker(diff,patternMask)
-            countnotequal = sum(notequal.getdata())
-            score -= countnotequal
-
-            if minScore < score:
-                minScore = score
-                matching_xs = xs
-                matching_ys = ys
-
-    #TODO: Figure out what number to put here
-    if minScore > (patternWidth * patternHeight * .03):    
-         print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, matching_xs, matching_ys)
-    
-    # Function completed sucessfully    
+    #Exit Successfully
     return True
+
+
+def normalize(array, imin = -1, imax = 1):
+    """
+    I = Imin + (Imax-Imin)*(D-Dmin)/(Dmax-Dmin)
+    """
+
+    dmin = array.min()
+    dmax = array.max()
+
+
+    array -= dmin;
+    array *= (imax - imin)
+    array /= (dmax-dmin)
+    array += imin
+
+    return array
 
 def printError(error, testerFlag):
     """

@@ -1,7 +1,7 @@
-Error: Invalid Arguments. Must provide a pattern(-p) and source(-s) image!
-Error: Invalid Arguments. Must provide a pattern(-p) and source(-s) image!
-Error: Invalid Arguments. Must provide a pattern(-p) and source(-s) image!
-Error: Image files cannot be found!
+Error: Invalid Arguments. No pattern images provided!
+Error: Invalid Arguments. No source images provided!
+Error: Invalid Arguments. No pattern images provided!
+Error: Image file cannot be found!
 Error: Provided images must be GIF, JPEG, or PNG!
 black.jpg matches bb0001.jpg at 35x44+797+609
 
