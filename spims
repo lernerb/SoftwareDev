@@ -10,27 +10,27 @@ from PIL import Image, ImageChops
 from os import listdir
 from os.path import isdir, join
 
-def matchTemplate(patternArg, sourceArg):
+def matchTemplate(patternImg, sourceImg, patternName, sourceName):
     """
     Attempts to find the pattern image in the source image.
 
     Arguments:
-    patternArg -- The path to the pattern image
-    sourceArg -- The path to the source image 
+    patternImg -- The loaded pattern image
+    sourceImg -- The loaded source image 
+    patternName -- The path to pattern Image
+    sourceName -- The path to source image
 
-    Returns True if completed successfully, otherwise returns False.
+    Returns True if completed successfully AND match found, otherwise returns False.
     """
 
     # Convert Source Image into a numpy array grayscaled
-    sourceName = sourceArg.rpartition('/')[2]
-    sourceArray = Image.open(sourceArg).convert('L')
+    sourceArray = sourceImg
     numpySource = np.asarray(sourceArray)
     numpySource.flags.writeable = True
     numpySource = np.ascontiguousarray(numpySource, dtype=np.float32)
 
     # Convert Pattern Image into a numpy array grayscaled
-    patternName = patternArg.rpartition('/')[2]
-    patternArray = Image.open(patternArg).convert('L')
+    patternArray = patternImg
     numpyPattern = np.asarray(patternArray)
     numpyPattern.flags.writeable = True
     numpyPattern = np.ascontiguousarray(numpyPattern, dtype=np.float32)
@@ -40,7 +40,7 @@ def matchTemplate(patternArg, sourceArg):
     patternWidth, patternHeight = patternArray.size
 
     if (patternWidth <= 10 and patternHeight <= 10 and sourceWidth <= 10 and sourceHeight <= 10):
-        return matchSmallTemplate(patternArg, sourceArg)
+        return matchSmallTemplate(patternImg, sourceImg, patternName, sourceName)
         
     # FFT using a Normalized Cross Correlation
     template_mean = np.mean(numpyPattern)
@@ -54,23 +54,20 @@ def matchTemplate(patternArg, sourceArg):
     ij = np.unravel_index(corr.argmax(), corr.shape)
     m_xs, m_ys = ij[::-1]
 
-    isConfirmedMatch = not isFalsePositive(m_xs, m_ys, sourceArg, patternArg)
+    isConfirmedMatch = not isFalsePositive(m_xs, m_ys, sourceImg, patternImg, sourceName, patternName)
 
     if isConfirmedMatch:
-        print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)   
+        print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)
+        #invert image in source so that it can't be found again
     
     return True
 
-def isFalsePositive(xs, ys, sourceArg, patternArg):
+def isFalsePositive(xs, ys, sourceImg, patternImg, sourceName, patternName):
 
-    sourceName = sourceArg.rpartition('/')[2]
-    sourceImage = Image.open(sourceArg)
-    patternName = patternArg.rpartition('/')[2]
-    patternImage = Image.open(patternArg)
+    sourceImage = sourceImg
+    patternImage = patternImg
 
-    sourceImage = sourceImage.convert(mode="L")
     sourceWidth, sourceHeight = sourceImage.size
-    patternImage = patternImage.convert(mode="L")
     patternWidth, patternHeight = patternImage.size
     patternMask = Image.new(mode="L", size=patternImage.size, color=1)
 
@@ -82,31 +79,30 @@ def isFalsePositive(xs, ys, sourceArg, patternArg):
     score -= countnotequal
     
     return score < (patternWidth * patternHeight * .03)    
-        
-def matchSmallTemplate(patternArg, sourceArg):
+     
+def matchSmallTemplate(patternImg, sourceImg, patternName, sourceName):
     """
     Attempts to find the pattern image in the source image.
-
+    
     Arguments:
-    patternArg -- The path to the pattern image
-    sourceArg -- The path to the source image
+    patternImg -- The loaded pattern image
+    sourceImg -- The loaded source image 
+    patternName -- The path to pattern Image
+    sourceName -- The path to source image
 
-    Returns -1 if an error occurs, otherwise returns 0.
     
     """
 
-    sourceName = sourceArg.rpartition('/')[2]
-    sourceImage = Image.open(sourceArg)
-    patternName = patternArg.rpartition('/')[2]
-    patternImage = Image.open(patternArg)
+    sourceImage = sourceImg
+    patternImage = patternImg
 
     minScore = 0
     matching_xs = 0
     matching_ys = 0
 
-    sourceImage = sourceImage.convert(mode="L")
+    sourceImage = sourceImage
     sourceWidth, sourceHeight = sourceImage.size
-    patternImage = patternImage.convert(mode="L")
+    patternImage = patternImage
     patternWidth, patternHeight = patternImage.size
     patternMask = Image.new(mode="L", size=patternImage.size, color=1)
     
@@ -125,6 +121,8 @@ def matchSmallTemplate(patternArg, sourceArg):
 
             if minScore > (patternWidth * patternHeight * .03):    
                 print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, matching_xs, matching_ys)
+                #invert and look for another match
+
     
     # Function completed sucessfully    
     return True
@@ -337,10 +335,14 @@ def main(argv):
 
         # Try to find matches between all combinations of patterns and sources
         for pattern in patterns:
-            for source in sources:
-                if not matchTemplate(pattern, source):
+            patternName = pattern.rpartition('/')[2]
+            patternImg = Image.open(pattern).convert('L')
+            for source in sources:            
+                sourceName = source.rpartition('/')[2]
+                sourceImg = Image.open(source).convert('L')
+                if not matchTemplate(patternImg, sourceImg, patternName, sourceName):
                     # Error occured while finding a match. Stop and exit.
-                    return -1  
+                    return -1   
     else:
         # Arguments are invalid
         return -1 
@@ -350,3 +352,4 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+
