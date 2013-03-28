@@ -58,7 +58,6 @@ def matchTemplate(patternImg, sourceImg, patternName, sourceName):
 
     if isConfirmedMatch:
         print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)
-        #invert image in source so that it can't be found again
     
     return True
 
@@ -78,7 +77,19 @@ def isFalsePositive(xs, ys, sourceImg, patternImg, sourceName, patternName):
     countnotequal = sum(notequal.getdata())
     score -= countnotequal
     
-    return score < (patternWidth * patternHeight * .03)    
+    return score < (patternWidth * patternHeight * .03)
+
+def fillWithRandom(image, x1, y1, x2, y2):
+    """
+    Fills the given image from (x1,y1) to (x2, y2) with random data (looks like static)
+    """
+    
+    imarray = np.random.rand(x2-x1,y2-y1,3) * 255
+    im = Image.fromarray(imarray.astype('uint8')).convert('RGBA')
+    
+    image.paste(im, (x1, y1))
+    
+    return image
      
 def matchSmallTemplate(patternImg, sourceImg, patternName, sourceName):
     """
@@ -93,6 +104,7 @@ def matchSmallTemplate(patternImg, sourceImg, patternName, sourceName):
     
     """
 
+    foundMatches = []
     sourceImage = sourceImg
     patternImage = patternImg
 
@@ -119,16 +131,33 @@ def matchSmallTemplate(patternImg, sourceImg, patternName, sourceName):
             matching_xs = xs
             matching_ys = ys
 
-            if minScore > (patternWidth * patternHeight * .03):    
+            if minScore > (patternWidth * patternHeight * .03) and not isOverlappingMatch(foundMatches,matching_xs, matching_ys, patternWidth, patternHeight):    
+                foundMatches.append(([matching_xs, matching_ys], patternWidth, patternHeight))
                 print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, matching_xs, matching_ys)
-                #invert and look for another match
+                
+                
 
     
     # Function completed sucessfully    
     return True
 
-
-
+def isOverlappingMatch (matches, x, y, width, height):
+    for match in matches:
+        if (#top left
+            (x >= match[0][0]          and x < match[0][0]+match[1]         and
+             y >= match[0][1]          and y < match[0][1]+match[2]             ) or
+            #top right
+            (x + width >= match[0][0]  and x + width < match[0][0]+match[1] and
+             y >= match[0][1]          and y < match[0][1]+match[2]             ) or
+            #bottom left
+            (x >= match[0][0]          and x < match[0][0]+match[1]         and
+             y + height >= match[0][1] and y + height < match[0][1]+match[2]    ) or
+            #bottom right
+            (x + width >= match[0][0]  and x + width < match[0][0]+match[1] and
+             y + height >= match[0][1] and y + height < match[0][1]+match[2]    )):
+            return True
+    return False
+        
 def normalize(array, imin = -1, imax = 1):
     """
     I = Imin + (Imax-Imin)*(D-Dmin)/(Dmax-Dmin)
