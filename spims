@@ -43,7 +43,9 @@ def matchTemplate(patternImg, sourceImg, patternName, sourceName):
     if (patternWidth <= 10 and patternHeight <= 10 and sourceWidth <= 10 and sourceHeight <= 10):
         matchSmallTemplate(patternImg, sourceImg, patternName, sourceName)
         return
+        
 
+    
     # FFT using a Normalized Cross Correlation
     template_mean = np.mean(numpyPattern)
     numpyPattern -= template_mean
@@ -51,15 +53,26 @@ def matchTemplate(patternImg, sourceImg, patternName, sourceName):
                                 dtype=np.float32)
     
     corr = normalize(corr)
+        
+    continueLoop = True
+    temp = corr
+    while(continueLoop):
+        
+        # Find the max value and print it
+        ij = np.unravel_index(corr.argmax(), corr.shape)
+        m_xs, m_ys = ij[::-1]
+        
 
-    # Find the max value and print it
-    ij = np.unravel_index(corr.argmax(), corr.shape)
-    m_xs, m_ys = ij[::-1]
+        isConfirmedMatch = not isFalsePositive(m_xs, m_ys, sourceImg, patternImg, sourceName, patternName)
+        #isConfirmedMatch = True
 
-    isConfirmedMatch = not isFalsePositive(m_xs, m_ys, sourceImg, patternImg, sourceName, patternName)
-
-    if isConfirmedMatch:
-        print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)
+        if isConfirmedMatch:
+            temp = blankCorrelationOfFound(temp, m_xs, m_ys, patternWidth, patternHeight)
+            print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)
+        else:
+            continueLoop = False
+        
+        
     
     return True
 
@@ -79,7 +92,7 @@ def isFalsePositive(xs, ys, sourceImg, patternImg, sourceName, patternName):
     countnotequal = sum(notequal.getdata())
     score -= countnotequal
     
-    return score < (patternWidth * patternHeight * .03)
+    return score < (patternWidth * patternHeight * 0.03)
 
 def fillWithRandom(image, x1, y1, x2, y2):
     """
@@ -92,6 +105,21 @@ def fillWithRandom(image, x1, y1, x2, y2):
     image.paste(im, (x1, y1))
     
     return image
+
+def blankCorrelationOfFound(correlationArray, x, y, width, height):
+    """
+    Modifies correlationArray in place and reduces correlation of found match at specified coordinates to 0
+    """
+    
+    for xs in range(width):
+        for ys in range(height):
+            #print("blanking correlation at %ix%i" % (x+xs, y+ys))
+            mx = x + xs
+            my = y + ys
+            #print ("( %i, %i )" % (mx, my))
+            correlationArray[my][mx] = 0
+    
+    return correlationArray        
      
 def matchSmallTemplate(patternImg, sourceImg, patternName, sourceName):
     """
@@ -361,7 +389,8 @@ def main(argv):
     if paths:
         # If path is not false, then it is a tuple of the patterns and sources
         patterns, sources = paths
-
+        #print (patterns)
+        #print (sources)
         # Try to find matches between all combinations of patterns and sources
         for pattern in patterns:
             patternName = pattern.rpartition('/')[2]
@@ -369,7 +398,7 @@ def main(argv):
             for source in sources:            
                 sourceName = source.rpartition('/')[2]
                 sourceImg = Image.open(source).convert('L')
-
+                #print ("Looking for " + pattern + " in " + source)
                 try:
                     t = Thread(target=matchTemplate, args=(patternImg, sourceImg, patternName, sourceName))
                     t.start()
