@@ -25,12 +25,15 @@ assignment:
 
 ###### Multiple pattern to single source image matching
     ./spims -pdir <dir1> -s <file2>
+    ./spims --pdir <dir1> -s <file2>
 
 ###### Single pattern to multiple source image matching
     ./spims -p <file1> -sdir <dir2>
+    ./spims -p <file1> --sdir <dir2>
 
 ###### Multiple pattern to multiple source image matching
     ./spims -pdir <dir1> -sdir <dir2>
+    ./spims --pdir <dir1> --sdir <dir2>
 
 where:
  * `<file1>` is the name of an existing file in JPEG, PNG or GIF fomat without
