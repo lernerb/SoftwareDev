@@ -9,6 +9,7 @@ from scipy import signal, ndimage
 from PIL import Image, ImageChops
 from os import listdir
 from os.path import isdir, join
+from threading import Thread
 
 def matchTemplate(patternImg, sourceImg, patternName, sourceName):
     """
@@ -40,8 +41,9 @@ def matchTemplate(patternImg, sourceImg, patternName, sourceName):
     patternWidth, patternHeight = patternArray.size
 
     if (patternWidth <= 10 and patternHeight <= 10 and sourceWidth <= 10 and sourceHeight <= 10):
-        return matchSmallTemplate(patternImg, sourceImg, patternName, sourceName)
-        
+        matchSmallTemplate(patternImg, sourceImg, patternName, sourceName)
+        return
+
     # FFT using a Normalized Cross Correlation
     template_mean = np.mean(numpyPattern)
     numpyPattern -= template_mean
@@ -135,9 +137,7 @@ def matchSmallTemplate(patternImg, sourceImg, patternName, sourceName):
                 foundMatches.append(([matching_xs, matching_ys], patternWidth, patternHeight))
                 print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, matching_xs, matching_ys)
                 
-                
 
-    
     # Function completed sucessfully    
     return True
 
@@ -213,7 +213,7 @@ def isValidType(filePath, testerFlag):
         fileType = imghdr.what(filePath)
 
         if fileType not in validTypes:
-            printError('Provided images must be GIF, JPEG, or PNG!', testerFlag)
+            printError('Provided images must be GIF, JPEG, or PNG! (File: ' + filePath + ' - Type: ' + fileType + ')', testerFlag)
             return False
 
     except IOError as e:
@@ -369,9 +369,14 @@ def main(argv):
             for source in sources:            
                 sourceName = source.rpartition('/')[2]
                 sourceImg = Image.open(source).convert('L')
-                if not matchTemplate(patternImg, sourceImg, patternName, sourceName):
+
+                try:
+                    t = Thread(target=matchTemplate, args=(patternImg, sourceImg, patternName, sourceName))
+                    t.start()
+                except Exception, errtxt:
                     # Error occured while finding a match. Stop and exit.
-                    return -1   
+                    printError(errtxt, testerFlag)
+                    return -1
     else:
         # Arguments are invalid
         return -1 
