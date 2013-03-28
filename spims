@@ -22,6 +22,7 @@ def matchTemplate(patternImg, sourceImg, patternName, sourceName):
     sourceName -- The path to source image
 
     Returns True if completed successfully AND match found, otherwise returns False.
+
     """
 
     # Convert Source Image into a numpy array grayscaled
@@ -42,35 +43,31 @@ def matchTemplate(patternImg, sourceImg, patternName, sourceName):
 
     if (patternWidth <= 10 and patternHeight <= 10 and sourceWidth <= 10 and sourceHeight <= 10):
         matchSmallTemplate(patternImg, sourceImg, patternName, sourceName)
-        return
+    else:
 
-    # FFT using a Normalized Cross Correlation
-    template_mean = np.mean(numpyPattern)
-    numpyPattern -= template_mean
-    corr = np.ascontiguousarray(signal.fftconvolve(numpySource, numpyPattern[::-1, ::-1], mode="valid"), 
-                                dtype=np.float32)
+        # FFT using a Normalized Cross Correlation
+        template_mean = np.mean(numpyPattern)
+        numpyPattern -= template_mean
+        corr = np.ascontiguousarray(signal.fftconvolve(numpySource, numpyPattern[::-1, ::-1], mode="valid"), 
+                                    dtype=np.float32)
     
-    corr = normalize(corr)
+        corr = normalize(corr)
 
-    # Find the max value and print it
-    ij = np.unravel_index(corr.argmax(), corr.shape)
-    m_xs, m_ys = ij[::-1]
+        # Find the max value and print it
+        ij = np.unravel_index(corr.argmax(), corr.shape)
+        m_xs, m_ys = ij[::-1]
 
-    isConfirmedMatch = not isFalsePositive(m_xs, m_ys, sourceImg, patternImg, sourceName, patternName)
+        if isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg):
+            print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)
 
-    if isConfirmedMatch:
-        print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)
-    
-    return True
-
-def isFalsePositive(xs, ys, sourceImage, patternImage, sourceName, patternName):
+def isConfirmedMatch(xs, ys, sourceImage, patternImage):
 
     sourceWidth, sourceHeight = sourceImage.size
     patternWidth, patternHeight = patternImage.size
     patternMask = Image.new(mode="L", size=patternImage.size, color=1)
 
     if (xs > sourceWidth or ys > sourceHeight):
-	return True
+	return False
     
     score = patternWidth*patternHeight
     sourceCrop = sourceImage.crop((xs,ys,xs+patternWidth,ys+patternHeight))
@@ -79,11 +76,12 @@ def isFalsePositive(xs, ys, sourceImage, patternImage, sourceName, patternName):
     countnotequal = sum(notequal.getdata())
     score -= countnotequal
     
-    return score < (patternWidth * patternHeight * .03)
+    return score >= (patternWidth * patternHeight * .03)
 
 def fillWithRandom(image, x1, y1, x2, y2):
     """
     Fills the given image from (x1,y1) to (x2, y2) with random data (looks like static)
+
     """
     
     imarray = np.random.rand(x2-x1,y2-y1,3) * 255
@@ -100,12 +98,10 @@ def matchSmallTemplate(patternImage, sourceImage, patternName, sourceName):
     sourceImg -- The loaded source image 
     patternName -- The path to pattern Image
     sourceName -- The path to source image    
+
     """
 
     foundMatches = []
-    minScore = 0
-    matching_xs = 0
-    matching_ys = 0
 
     sourceWidth, sourceHeight = sourceImage.size
     patternWidth, patternHeight = patternImage.size
@@ -120,17 +116,9 @@ def matchSmallTemplate(patternImage, sourceImage, patternName, sourceName):
             countnotequal = sum(notequal.getdata())
             score -= countnotequal
 
-            minScore = score
-            matching_xs = xs
-            matching_ys = ys
-
-            if minScore > (patternWidth * patternHeight * .03) and not isOverlappingMatch(foundMatches,matching_xs, matching_ys, patternWidth, patternHeight):    
-                foundMatches.append(([matching_xs, matching_ys], patternWidth, patternHeight))
-                print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, matching_xs, matching_ys)
-                
-
-    # Function completed sucessfully    
-    return True
+            if score > (patternWidth * patternHeight * .03) and not isOverlappingMatch(foundMatches, xs, ys, patternWidth, patternHeight):    
+                foundMatches.append(([xs, ys], patternWidth, patternHeight))
+                print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, xs, ys)
 
 def isOverlappingMatch (matches, x, y, width, height):
     for match in matches:
@@ -191,6 +179,7 @@ def isValidType(filePath, testerFlag):
     testerFlag -- True if SPIMS is being run by the tester
 
     Returns True if the file is a valid image, otherwise returns False.
+
     """
 
     # Make sure images exist and are of the correct type
@@ -203,7 +192,7 @@ def isValidType(filePath, testerFlag):
         fileType = imghdr.what(filePath)
 
         if fileType not in validTypes:
-            printError('Provided images must be GIF, JPEG, or PNG! (File: ' + filePath + ' - Type: ' + fileType + ')', testerFlag)
+            printError('Provided images must be GIF, JPEG, or PNG!', testerFlag)
             return False
 
     except IOError as e:
@@ -223,6 +212,7 @@ def allValidTypes(patterns, sources, testerFlag):
     testerFlag -- True if SPIMS is being run by the tester
 
     Returns True if all the files are valid, otherwise returns False.
+
     """
 
     # Make sure all patterns are valid
@@ -251,6 +241,7 @@ def validateArgs(patternArg, patternDirArg, sourceArg, sourceDirArg, testerFlag)
 
     Returns False if any arguments are invalid, otherwise 
     returns a tuple containing a list of patterns and a list of sources
+
     """
 
     # Make sure a pattern image is given
