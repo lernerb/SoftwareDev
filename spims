@@ -63,15 +63,15 @@ def matchTemplate(patternImg, sourceImg, patternName, sourceName):
     
     return True
 
-def isFalsePositive(xs, ys, sourceImg, patternImg, sourceName, patternName):
-
-    sourceImage = sourceImg
-    patternImage = patternImg
+def isFalsePositive(xs, ys, sourceImage, patternImage, sourceName, patternName):
 
     sourceWidth, sourceHeight = sourceImage.size
     patternWidth, patternHeight = patternImage.size
     patternMask = Image.new(mode="L", size=patternImage.size, color=1)
 
+    if (xs > sourceWidth or ys > sourceHeight):
+	return True
+    
     score = patternWidth*patternHeight
     sourceCrop = sourceImage.crop((xs,ys,xs+patternWidth,ys+patternHeight))
     diff = ImageChops.difference(patternImage, sourceCrop)
@@ -88,12 +88,10 @@ def fillWithRandom(image, x1, y1, x2, y2):
     
     imarray = np.random.rand(x2-x1,y2-y1,3) * 255
     im = Image.fromarray(imarray.astype('uint8')).convert('RGBA')
-    
     image.paste(im, (x1, y1))
-    
     return image
      
-def matchSmallTemplate(patternImg, sourceImg, patternName, sourceName):
+def matchSmallTemplate(patternImage, sourceImage, patternName, sourceName):
     """
     Attempts to find the pattern image in the source image.
     
@@ -101,22 +99,15 @@ def matchSmallTemplate(patternImg, sourceImg, patternName, sourceName):
     patternImg -- The loaded pattern image
     sourceImg -- The loaded source image 
     patternName -- The path to pattern Image
-    sourceName -- The path to source image
-
-    
+    sourceName -- The path to source image    
     """
 
     foundMatches = []
-    sourceImage = sourceImg
-    patternImage = patternImg
-
     minScore = 0
     matching_xs = 0
     matching_ys = 0
 
-    sourceImage = sourceImage
     sourceWidth, sourceHeight = sourceImage.size
-    patternImage = patternImage
     patternWidth, patternHeight = patternImage.size
     patternMask = Image.new(mode="L", size=patternImage.size, color=1)
     
@@ -200,7 +191,6 @@ def isValidType(filePath, testerFlag):
     testerFlag -- True if SPIMS is being run by the tester
 
     Returns True if the file is a valid image, otherwise returns False.
-
     """
 
     # Make sure images exist and are of the correct type
@@ -233,7 +223,6 @@ def allValidTypes(patterns, sources, testerFlag):
     testerFlag -- True if SPIMS is being run by the tester
 
     Returns True if all the files are valid, otherwise returns False.
-
     """
 
     # Make sure all patterns are valid
@@ -262,7 +251,6 @@ def validateArgs(patternArg, patternDirArg, sourceArg, sourceDirArg, testerFlag)
 
     Returns False if any arguments are invalid, otherwise 
     returns a tuple containing a list of patterns and a list of sources
-
     """
 
     # Make sure a pattern image is given
