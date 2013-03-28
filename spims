@@ -308,6 +308,11 @@ def main(argv):
         if len(argv) > i:
             patternDirArg = argv[i]
 
+    if '--pdir' in argv:
+        i = argv.index('--pdir') + 1
+        if len(argv) > i:
+            patternDirArg = argv[i]
+
     if '-s' in argv:
         i = argv.index('-s') + 1
         if len(argv) > i:
@@ -315,6 +320,11 @@ def main(argv):
 
     if '-sdir' in argv:
         i = argv.index('-sdir') + 1
+        if len(argv) > i:
+            sourceDirArg = argv[i]
+
+    if '--sdir' in argv:
+        i = argv.index('--sdir') + 1
         if len(argv) > i:
             sourceDirArg = argv[i]
 
