@@ -11,7 +11,7 @@ from os import listdir
 from os.path import isdir, join
 from threading import Thread
 
-def matchTemplate(patternImg, sourceImg, patternName, sourceName):
+def matchTemplate(patternImg, sourceImg, patternName, sourceName, foundMatches[]):
     """
     Attempts to find the pattern image in the source image.
 
@@ -44,7 +44,6 @@ def matchTemplate(patternImg, sourceImg, patternName, sourceName):
     if (patternWidth <= 10 and patternHeight <= 10 and sourceWidth <= 10 and sourceHeight <= 10):
         matchSmallTemplate(patternImg, sourceImg, patternName, sourceName)
     else:
-
         # FFT using a Normalized Cross Correlation
         template_mean = np.mean(numpyPattern)
         numpyPattern -= template_mean
@@ -57,8 +56,10 @@ def matchTemplate(patternImg, sourceImg, patternName, sourceName):
         ij = np.unravel_index(corr.argmax(), corr.shape)
         m_xs, m_ys = ij[::-1]
 
-        if isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg):
+        if isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg) and not isOverlappingMatch(foundMatches,m_xs, m_ys, patternWidth, patternHeight):
+            foundMatches.append(([m_xs, m_ys], patternWidth, patternHeight))
             print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)
+	    matchTemplate(patternImg, fillWithRandom(sourceImg,m_xs, m_ys, patternWidth+m_xs, patternHeight+m_ys), patternName, sourceName, foundMatches)
 
 def isConfirmedMatch(xs, ys, sourceImage, patternImage):
 
@@ -76,7 +77,7 @@ def isConfirmedMatch(xs, ys, sourceImage, patternImage):
     countnotequal = sum(notequal.getdata())
     score -= countnotequal
     
-    return score >= (patternWidth * patternHeight * .03)
+    return score >= (patternWidth * patternHeight * 0.03)
 
 def fillWithRandom(image, x1, y1, x2, y2):
     """
@@ -87,7 +88,7 @@ def fillWithRandom(image, x1, y1, x2, y2):
     imarray = np.random.rand(x2-x1,y2-y1,3) * 255
     im = Image.fromarray(imarray.astype('uint8')).convert('RGBA')
     image.paste(im, (x1, y1))
-    return image
+    return image      
      
 def matchSmallTemplate(patternImage, sourceImage, patternName, sourceName):
     """
@@ -116,7 +117,7 @@ def matchSmallTemplate(patternImage, sourceImage, patternName, sourceName):
             countnotequal = sum(notequal.getdata())
             score -= countnotequal
 
-            if score > (patternWidth * patternHeight * .03) and not isOverlappingMatch(foundMatches, xs, ys, patternWidth, patternHeight):    
+            if score >= (patternWidth * patternHeight * 0.03) and not isOverlappingMatch(foundMatches, xs, ys, patternWidth, patternHeight):    
                 foundMatches.append(([xs, ys], patternWidth, patternHeight))
                 print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, xs, ys)
 
