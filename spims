@@ -59,7 +59,7 @@ def matchTemplate(patternImg, sourceImg, patternName, sourceName, foundMatches[]
         if isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg) and not isOverlappingMatch(foundMatches,m_xs, m_ys, patternWidth, patternHeight):
             foundMatches.append(([m_xs, m_ys], patternWidth, patternHeight))
             print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)
-	    matchTemplate(patternImg, fillWithRandom(sourceImg,m_xs, m_ys, patternWidth+m_xs, patternHeight+m_ys), patternName, sourceName, foundMatches)
+            matchTemplate(patternImg, fillWithRandom(sourceImg,m_xs, m_ys, patternWidth+m_xs, patternHeight+m_ys), patternName, sourceName, foundMatches)
 
 def isConfirmedMatch(xs, ys, sourceImage, patternImage):
 
