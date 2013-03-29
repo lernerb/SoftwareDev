@@ -11,7 +11,7 @@ from os import listdir
 from os.path import isdir, join
 from threading import Thread
 
-def matchTemplate(patternImg, sourceImg, patternName, sourceName, foundMatches[]):
+def matchTemplate(patternImg, sourceImg, patternName, sourceName, foundMatches=[]):
     """
     Attempts to find the pattern image in the source image.
 
