@@ -9,7 +9,7 @@ from scipy import signal, ndimage
 from PIL import Image, ImageChops
 from os import listdir
 from os.path import isdir, join
-from threading import Thread
+from multiprocessing import Process
 
 def matchTemplate(patternImg, sourceImg, patternName, sourceName, foundMatches=[]):
     """
@@ -351,8 +351,8 @@ def main(argv):
                 sourceImg = Image.open(source).convert('L')
 
                 try:
-                    t = Thread(target=matchTemplate, args=(patternImg, sourceImg, patternName, sourceName))
-                    t.start()
+                    p = Process(target=matchTemplate, args=(patternImg, sourceImg, patternName, sourceName))
+		    p.start()
                 except Exception, errtxt:
                     # Error occured while finding a match. Stop and exit.
                     printError(errtxt, testerFlag)
