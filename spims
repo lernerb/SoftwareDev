@@ -11,6 +11,15 @@ from os import listdir
 from os.path import isdir, join
 from multiprocessing import Process
 
+def startMatching(patternArg, sourceArg):
+    patternName = patternArg.rpartition('/')[2]
+    patternImg = Image.open(patternArg).convert('L')
+
+    sourceName = sourceArg.rpartition('/')[2]
+    sourceImg = Image.open(sourceArg).convert('L')
+
+    matchTemplate(patternImg, sourceImg, patternName, sourceName)
+
 def matchTemplate(patternImg, sourceImg, patternName, sourceName, foundMatches=[]):
     """
     Attempts to find the pattern image in the source image.
@@ -26,14 +35,12 @@ def matchTemplate(patternImg, sourceImg, patternName, sourceName, foundMatches=[
     """
 
     # Convert Source Image into a numpy array grayscaled
-    sourceArray = sourceImg
-    numpySource = np.asarray(sourceArray)
+    numpySource = np.asarray(sourceImg)
     numpySource.flags.writeable = True
     numpySource = np.ascontiguousarray(numpySource, dtype=np.float32)
 
     # Convert Pattern Image into a numpy array grayscaled
-    patternArray = patternImg
-    numpyPattern = np.asarray(patternArray)
+    numpyPattern = np.asarray(patternImg)
     numpyPattern.flags.writeable = True
     numpyPattern = np.ascontiguousarray(numpyPattern, dtype=np.float32)
 
@@ -344,14 +351,10 @@ def main(argv):
 
         # Try to find matches between all combinations of patterns and sources
         for pattern in patterns:
-            patternName = pattern.rpartition('/')[2]
-            patternImg = Image.open(pattern).convert('L')
-            for source in sources:            
-                sourceName = source.rpartition('/')[2]
-                sourceImg = Image.open(source).convert('L')
+            for source in sources:
 
                 try:
-                    p = Process(target=matchTemplate, args=(patternImg, sourceImg, patternName, sourceName))
+                    p = Process(target=startMatching, args=(pattern, source))
 		    p.start()
                 except Exception, errtxt:
                     # Error occured while finding a match. Stop and exit.
