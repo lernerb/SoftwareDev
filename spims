@@ -2,6 +2,7 @@
 
 import sys
 import imghdr
+import itertools
 import cmath
 import numpy as np
 from numpy.linalg import norm
@@ -9,7 +10,10 @@ from scipy import signal, ndimage
 from PIL import Image, ImageChops
 from os import listdir
 from os.path import isdir, join
-from multiprocessing import Process
+from multiprocessing import Pool
+
+def startMatching_star(p_s):
+    startMatching(*p_s)
 
 def startMatching(patternArg, sourceArg):
     patternName = patternArg.rpartition('/')[2]
@@ -45,8 +49,8 @@ def matchTemplate(patternImg, sourceImg, patternName, sourceName, foundMatches=[
     numpyPattern = np.ascontiguousarray(numpyPattern, dtype=np.float32)
 
     # Get the original sizes of both images for normalization
-    sourceWidth, sourceHeight = sourceArray.size
-    patternWidth, patternHeight = patternArray.size
+    sourceWidth, sourceHeight = sourceImg.size
+    patternWidth, patternHeight = patternImg.size
 
     if (patternWidth <= 10 and patternHeight <= 10 and sourceWidth <= 10 and sourceHeight <= 10):
         matchSmallTemplate(patternImg, sourceImg, patternName, sourceName)
@@ -349,17 +353,13 @@ def main(argv):
         # If path is not false, then it is a tuple of the patterns and sources
         patterns, sources = paths
 
-        # Try to find matches between all combinations of patterns and sources
-        for pattern in patterns:
-            for source in sources:
-
-                try:
-                    p = Process(target=startMatching, args=(pattern, source))
-		    p.start()
-                except Exception, errtxt:
-                    # Error occured while finding a match. Stop and exit.
-                    printError(errtxt, testerFlag)
-                    return -1
+        try:
+            pool = Pool(processes=4)
+            pool.map(startMatching_star, itertools.product(patterns, sources))
+        except Exception, errtxt:
+            # Error occured while finding a match. Stop and exit.
+            print errtxt
+            return -1
     else:
         # Arguments are invalid
         return -1 
