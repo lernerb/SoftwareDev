@@ -25,6 +25,9 @@ def startMatching(patternArg, sourceArg):
     sourceName = sourceArg.rpartition('/')[2]
     sourceImg = Image.open(sourceArg).convert('L')
 
+    #TODO: For scaling, we should make the pattern image as big
+    # as we can based upon the source image here
+
     matchTemplate(patternImg, sourceImg, patternName, sourceName)
 
 def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[]):
@@ -82,6 +85,11 @@ def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[]):
                           pName,
                           sName, 
                           foundMatches)
+        #else:
+            # TODO: We should lower the scaling of the pattern image here, and call matchTemplate
+            # we should have an optional 'scale down' passed to the function. If it is true we can
+            # further scale down, but if we ever find a match set it to false
+            # If the w/h reaches a certain point, we need to stop scaling though
 
 def isConfirmedMatch(xs, ys, sourceImage, patternImage):
 
