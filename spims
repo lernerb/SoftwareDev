@@ -12,6 +12,9 @@ from os import listdir
 from os.path import isdir, join
 from multiprocessing import Pool
 
+# Global Variables
+CONFIDENCE_INTERVAL = .03
+
 def startMatching_star(p_s):
     startMatching(*p_s)
 
@@ -31,8 +34,8 @@ def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[]):
     Arguments:
     patternImg -- The loaded pattern image
     sourceImg -- The loaded source image 
-    patternName -- The path to pattern Image
-    sourceName -- The path to source image
+    pName -- The path to pattern Image
+    sName -- The path to source image
 
     Returns True if completed successfully AND match found, otherwise returns False.
 
@@ -96,7 +99,7 @@ def isConfirmedMatch(xs, ys, sourceImage, patternImage):
     countnotequal = sum(notequal.getdata())
     score -= countnotequal
     
-    return score >= (patternWidth * patternHeight * 0.03)
+    return score >= (patternWidth * patternHeight * CONFIDENCE_INTERVAL)
 
 def fillWithRandom(image, x1, y1, x2, y2):
     """
@@ -109,15 +112,15 @@ def fillWithRandom(image, x1, y1, x2, y2):
     image.paste(im, (x1, y1))
     return image      
      
-def matchSmallTemplate(patternImage, sourceImage, patternName, sourceName):
+def matchSmallTemplate(patternImage, sourceImage, pName, sName):
     """
     Attempts to find the pattern image in the source image.
     
     Arguments:
     patternImg -- The loaded pattern image
     sourceImg -- The loaded source image 
-    patternName -- The path to pattern Image
-    sourceName -- The path to source image    
+    pName -- The path to pattern Image
+    sName -- The path to source image    
 
     """
 
@@ -136,24 +139,31 @@ def matchSmallTemplate(patternImage, sourceImage, patternName, sourceName):
             countnotequal = sum(notequal.getdata())
             score -= countnotequal
 
-            if score >= (patternWidth * patternHeight * 0.03) and not isOverlappingMatch(foundMatches, xs, ys, patternWidth, patternHeight):    
+            inConfidenceRange = score >= (patternWidth * patternHeight * CONFIDENCE_INTERVAL)
+            overlapping = isOverlappingMatch(foundMatches, xs, ys, patternWidth, patternHeight)
+
+            if inConfidenceRange and not overlapping:    
                 foundMatches.append(([xs, ys], patternWidth, patternHeight))
-                print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, xs, ys)
+                print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)
+
 
 def isOverlappingMatch (matches, x, y, width, height):
     for match in matches:
         if (#top left
-            (x >= match[0][0]          and x < match[0][0]+match[1]         and
-             y >= match[0][1]          and y < match[0][1]+match[2]             ) or
+            (x >= match[0][0] and x < match[0][0]+match[1] and 
+             y >= match[0][1] and y < match[0][1]+match[2]) 
+            or
             #top right
-            (x + width >= match[0][0]  and x + width < match[0][0]+match[1] and
-             y >= match[0][1]          and y < match[0][1]+match[2]             ) or
+            (x + width >= match[0][0] and x + width < match[0][0]+match[1] and
+             y >= match[0][1] and y < match[0][1]+match[2])
+            or
             #bottom left
-            (x >= match[0][0]          and x < match[0][0]+match[1]         and
-             y + height >= match[0][1] and y + height < match[0][1]+match[2]    ) or
+            (x >= match[0][0] and x < match[0][0]+match[1] and
+             y + height >= match[0][1] and y + height < match[0][1]+match[2])
+            or
             #bottom right
             (x + width >= match[0][0]  and x + width < match[0][0]+match[1] and
-             y + height >= match[0][1] and y + height < match[0][1]+match[2]    )):
+             y + height >= match[0][1] and y + height < match[0][1]+match[2])):
             return True
     return False
         
