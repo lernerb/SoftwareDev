@@ -24,7 +24,7 @@ def startMatching(patternArg, sourceArg):
 
     matchTemplate(patternImg, sourceImg, patternName, sourceName)
 
-def matchTemplate(patternImg, sourceImg, patternName, sourceName, foundMatches=[]):
+def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[]):
     """
     Attempts to find the pattern image in the source image.
 
@@ -53,7 +53,7 @@ def matchTemplate(patternImg, sourceImg, patternName, sourceName, foundMatches=[
     patternWidth, patternHeight = patternImg.size
 
     if (patternWidth <= 10 and patternHeight <= 10 and sourceWidth <= 10 and sourceHeight <= 10):
-        matchSmallTemplate(patternImg, sourceImg, patternName, sourceName)
+        matchSmallTemplate(patternImg, sourceImg, pName, sName)
     else:
         # FFT using a Normalized Cross Correlation
         template_mean = np.mean(numpyPattern)
@@ -67,10 +67,18 @@ def matchTemplate(patternImg, sourceImg, patternName, sourceName, foundMatches=[
         ij = np.unravel_index(corr.argmax(), corr.shape)
         m_xs, m_ys = ij[::-1]
 
-        if isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg) and not isOverlappingMatch(foundMatches,m_xs, m_ys, patternWidth, patternHeight):
+        confirm = isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg)
+        overlapping = isOverlappingMatch(foundMatches,m_xs, m_ys, patternWidth, patternHeight)
+
+        if confirm and not overlapping:
             foundMatches.append(([m_xs, m_ys], patternWidth, patternHeight))
-            print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, m_xs, m_ys)
-            matchTemplate(patternImg, fillWithRandom(sourceImg,m_xs, m_ys, patternWidth+m_xs, patternHeight+m_ys), patternName, sourceName, foundMatches)
+            print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, m_xs, m_ys)
+            
+            matchTemplate(patternImg, 
+                          fillWithRandom(sourceImg,m_xs, m_ys, patternWidth+m_xs, patternHeight+m_ys),
+                          pName,
+                          sName, 
+                          foundMatches)
 
 def isConfirmedMatch(xs, ys, sourceImage, patternImage):
 
