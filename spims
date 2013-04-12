@@ -6,16 +6,33 @@ import itertools
 import cmath
 import numpy as np
 import multiprocessing as mp
+import scipy.ndimage.filters as filters
 from numpy.linalg import norm
 from scipy import signal, ndimage
 from PIL import Image, ImageChops
 from os import listdir
 from os.path import isdir, join
 
-
 # Global Variables
-CONFIDENCE_INTERVAL = .95
+CONFIDENCE_INTERVAL = .03
 ACCEPTABLE_OVERLAP = .5
+MAX_MISSES = 10
+
+"""
+Notes from presentations:
+
+We should do a 1x1 pixel case on the numpy array, and see if it exists
+
+Check for [4] input??? (robust)
+
+Robustness:
+
+./spims
+./spims -pp "abc" -s "def" (subdir / no files / not image files)
+./spims -s -p
+./spims -p "asdf" -s 
+
+"""
 
 def startMatching_star(p_s):
     startMatching(*p_s)
@@ -42,7 +59,6 @@ def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain
     Returns True if completed successfully AND match found
 
     """
-
     # Convert Source Image into a numpy array grayscaled
     numpySource = np.asarray(sourceImg)
     numpySource.flags.writeable = True
@@ -57,7 +73,7 @@ def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain
     sourceWidth, sourceHeight = sourceImg.size
     patternWidth, patternHeight = patternImg.size
 
-    if (patternWidth <= 10 and patternHeight <= 10 and sourceWidth <= 10 and sourceHeight <= 10):
+    if ((patternWidth <= 10 and patternHeight <= 10 and sourceWidth <= 10 and sourceHeight <= 10)):
         matchSmallTemplate(patternImg, sourceImg, pName, sName)
     else:
         # FFT using a Normalized Cross Correlation
@@ -65,36 +81,38 @@ def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain
         numpyPattern -= template_mean
         corr = np.ascontiguousarray(signal.fftconvolve(numpySource, numpyPattern[::-1, ::-1], mode="valid"), 
                                     dtype=np.float32)
-    
-        # Find the max value and print it
-        ij = np.unravel_index(corr.argmax(), corr.shape)
-        
-        m_xs, m_ys = ij[::-1]
 
+        maxValue = 10
+        minValue = 0
 
-#        print "IJ Array is %s" % (ij,)
+        while (minValue <  maxValue):
 
-
-        confirm = isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg)
-        overlapping = isOverlappingMatch(foundMatches,m_xs, m_ys, patternWidth, patternHeight)
-
-        if confirm and not overlapping:
-            foundMatches.append(([m_xs, m_ys], patternWidth, patternHeight))
-            print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, m_xs, m_ys)
             
-            matchTemplate(patternImg, 
-                          fillWithRandom(sourceImg,m_xs, m_ys, patternWidth+m_xs, patternHeight+m_ys),
-                          pName,
-                          sName, 
-                          foundMatches,
-                          True)
-        elif tryAgain:
-            matchTemplate(patternImg, 
-                          fillWithRandom(sourceImg,m_xs, m_ys, patternWidth+m_xs, patternHeight+m_ys),
-                          pName,
-                          sName, 
-                          foundMatches,
-                          False)
+            # Find the max value and print it
+            ij = np.unravel_index(corr.argmax(), corr.shape)
+
+            print ij
+
+            m_xs, m_ys = ij[::-1]
+
+            confirm = isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg)
+            overlapping = isOverlappingMatch(foundMatches,m_xs, m_ys, patternWidth, patternHeight)
+
+            if confirm and not overlapping:
+                foundMatches.append(([m_xs, m_ys], patternWidth, patternHeight))
+                print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, m_xs, m_ys)
+                minValue = minValue + 1
+            minValue = minValue + 1
+            
+
+            corr[corr.argmax()] = 0
+
+            # CROP THAT SHIT OUT
+            # corr = 
+            #
+            #
+            #corr[x:x, x:x] = np
+
 
 def isConfirmedMatch(xs, ys, sourceImage, patternImage):
     sourceWidth, sourceHeight = sourceImage.size
