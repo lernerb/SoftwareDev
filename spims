@@ -91,7 +91,7 @@ def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain
             # Find the max value and print it
             ij = np.unravel_index(corr.argmax(), corr.shape)
 
-            print ij
+            #print ij
 
             m_xs, m_ys = ij[::-1]
 
@@ -101,17 +101,16 @@ def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain
             if confirm and not overlapping:
                 foundMatches.append(([m_xs, m_ys], patternWidth, patternHeight))
                 print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, m_xs, m_ys)
-                minValue = minValue + 1
-            minValue = minValue + 1
             
-
-            corr[corr.argmax()] = 0
-
-            # CROP THAT SHIT OUT
-            # corr = 
-            #
-            #
-            #corr[x:x, x:x] = np
+            if not overlapping:
+                minValue = minValue + 1
+            
+            corr[ij] = 0
+            
+            #print corr
+            #print corr.argmax()
+            #print corr[corr.argmax()]
+#            corr[x:x, x:x] = np.zeros(2,dtype=np.float32)
 
 
 def isConfirmedMatch(xs, ys, sourceImage, patternImage):
