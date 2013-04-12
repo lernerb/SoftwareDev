@@ -14,7 +14,8 @@ from os import listdir
 from os.path import isdir, join
 
 # Global Variables
-CONFIDENCE_INTERVAL = .03
+SMALL_CONFIDENCE_INTERVAL = .95
+LARGE_CONFIDENCE_INTERVAL = .7
 ACCEPTABLE_OVERLAP = .5
 MAX_MISSES = 10
 
@@ -86,15 +87,8 @@ def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain
         minValue = 0
 
         while (minValue <  maxValue):
-
-            
-            # Find the max value and print it
             ij = np.unravel_index(corr.argmax(), corr.shape)
-
-            #print ij
-
             m_xs, m_ys = ij[::-1]
-
             confirm = isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg)
             overlapping = isOverlappingMatch(foundMatches,m_xs, m_ys, patternWidth, patternHeight)
 
@@ -106,11 +100,6 @@ def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain
                 minValue = minValue + 1
             
             corr[ij] = 0
-            
-            #print corr
-            #print corr.argmax()
-            #print corr[corr.argmax()]
-#            corr[x:x, x:x] = np.zeros(2,dtype=np.float32)
 
 
 def isConfirmedMatch(xs, ys, sourceImage, patternImage):
@@ -127,11 +116,7 @@ def isConfirmedMatch(xs, ys, sourceImage, patternImage):
     notequal = ImageChops.darker(diff,patternMask)
     countnotequal = sum(notequal.getdata())
     score -= countnotequal
-
-    #print "printing score of   : %i" % (score)
-    #print "is less then score  : %i" % (patternWidth * patternHeight * CONFIDENCE_INTERVAL)
-    
-    return score >= (patternWidth * patternHeight * CONFIDENCE_INTERVAL)
+    return score >= (patternWidth * patternHeight * LARGE_CONFIDENCE_INTERVAL)
 
 def fillWithRandom(image, x1, y1, x2, y2):
     """
@@ -171,7 +156,7 @@ def matchSmallTemplate(patternImage, sourceImage, pName, sName):
             countnotequal = sum(notequal.getdata())
             score -= countnotequal
 
-            inConfidenceRange = score >= (patternWidth * patternHeight * CONFIDENCE_INTERVAL)
+            inConfidenceRange = score >= (patternWidth * patternHeight * SMALL_CONFIDENCE_INTERVAL)
             overlapping = isOverlappingMatch(foundMatches, xs, ys, patternWidth, patternHeight)
 
             if inConfidenceRange and not overlapping:    
