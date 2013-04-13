@@ -32,41 +32,39 @@ def startMatching(patternArg, sourceArg):
     sourceName = sourceArg.rpartition('/')[2]
     sourceImg = Image.open(sourceArg)
 
-    if(patternWidth == 1 and patternHeight == 1 and False):
+    if(patternWidth == 1 and patternHeight == 1):
         matchOneByOne(patternImg, sourceImg, patternName, sourceName)
     else:
         patternImg = patternImg.convert('L')
         sourceImg = sourceImg.convert('L')
         matchTemplate(patternImg, sourceImg, patternName, sourceName)
 
-#TODO
-def matchOneByOne(patternImg, sourceImg, pName, sName):
+def matchOneByOne(patternImage, sourceImage, pName, sName):
     """
     Attempts to find the pattern image in the source image.
     
     Arguments:
-    patternImg -- The loaded pattern image
-    sourceImg -- The loaded source image 
-    patternName -- The path to pattern Image
-    sourceName -- The path to source image    
+    patternImage -- The loaded pattern image
+    sourceImage -- The loaded source image 
+    pName -- The path to pattern Image
+    sName -- The path to source image    
 
     """
-
-    sourceWidth, sourceHeight = sourceImg.size
-    patternWidth, patternHeight = patternImg.size
-
-    patternMask = Image.new(mode="L", size=patternImg.size, color=1)
+    pixel = np.asarray(patternImage)
+    sourceWidth, sourceHeight = sourceImage.size
+    patternWidth, patternHeight = patternImage.size
+    patternMask = Image.new(mode="RGB", size=patternImage.size, color=1)
     
-    for xs in range(sourceWidth+1):
-        for ys in range(sourceHeight+1):
-            sourceCrop = sourceImg.crop((xs,ys,xs+patternWidth,ys+patternHeight))
-            diff = ImageChops.difference(patternImg, sourceCrop)
-            notequal = ImageChops.darker(diff,patternMask)
-            countnotequal = sum(notequal.getdata())
-            
-            if (countnotequal == 0):
-                print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, xs, ys)
+    for xs in range(sourceWidth-patternWidth+1):
+        for ys in range(sourceHeight-patternHeight+1):
 
+            score = patternWidth*patternHeight
+            sourceCrop = sourceImage.crop((xs,ys,xs+patternWidth,ys+patternHeight))            
+            diff = ImageChops.difference(patternImage.convert('RGB'), sourceCrop.convert('RGB'))
+            diffArray = np.asarray(diff)
+
+            if (diffArray == (0,0,0)).all():
+                print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)
 
 def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain=True):
     """
