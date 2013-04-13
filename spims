@@ -19,22 +19,6 @@ LARGE_CONFIDENCE_INTERVAL = .03
 ACCEPTABLE_OVERLAP = .5
 MAX_MISSES = 100
 
-"""
-Notes from presentations:
-
-We should do a 1x1 pixel case on the numpy array, and see if it exists
-
-Check for [4] input??? (robust)
-
-Robustness:
-
-./spims
-./spims -pp "abc" -s "def" (subdir / no files / not image files)
-./spims -s -p
-./spims -p "asdf" -s 
-
-"""
-
 def startMatching_star(p_s):
     startMatching(*p_s)
 
@@ -167,31 +151,26 @@ def isOverlappingMatch (matches, x, y, width, height):
             return True
     return False
 
-def printError(error, testerFlag=False):
+def printError(error):
     """
     Prints errors after appending 'Error: ' to the front of them.
 
     Arguments:
     error -- The error string to be printed
-    testerFlag -- True if SPIMS is being run by the tester
 
     Errors are normally printed to standard error, but if SPIMS is 
     being run by the tester they are printed to standard out.
 
     """
 
-    if testerFlag:
-        print 'Error: ' + error
-    else:
-        print >> sys.stderr, 'Error: ' + error
+    print >> sys.stderr, 'Error: ' + error
 
-def isValidType(filePath, testerFlag):
+def isValidType(filePath):
     """
     Determines whether or not the provided path is a valid image.
 
     Arguments:
     filePath -- The path to the file we are checking
-    testerFlag -- True if SPIMS is being run by the tester
 
     Returns True if the file is a valid image, otherwise returns False.
 
@@ -200,31 +179,30 @@ def isValidType(filePath, testerFlag):
     # Make sure images exist and are of the correct type
     try:
         if isdir(filePath):
-            printError('Received directory while expecting file!', testerFlag)
+            printError('Received directory while expecting file!')
             return False
 
         validTypes = ['gif', 'jpeg', 'png']
         fileType = imghdr.what(filePath)
 
         if fileType not in validTypes:
-            printError('Provided images must be GIF, JPEG, or PNG!', testerFlag)
+            printError('Provided images must be GIF, JPEG, or PNG!')
             return False
 
     except IOError as e:
-        printError('Image file cannot be found!', testerFlag)
+        printError('Image file cannot be found!')
         return False
 
     # Image is valid
     return True
 
-def allValidTypes(patterns, sources, testerFlag):
+def allValidTypes(patterns, sources):
     """
     Determines whether or not the provided files are valid types.
 
     Arguments:
     patterns -- The list of pattern paths
     sources -- The list of source paths
-    testerFlag -- True if SPIMS is being run by the tester
 
     Returns True if all the files are valid, otherwise returns False.
 
@@ -232,18 +210,18 @@ def allValidTypes(patterns, sources, testerFlag):
 
     # Make sure all patterns are valid
     for pattern in patterns:
-        if not isValidType(pattern, testerFlag):
+        if not isValidType(pattern):
             return False
 
     # Make sure all sources are valid
     for source in sources:
-        if not isValidType(source, testerFlag):
+        if not isValidType(source):
             return False
 
     # All are valid
     return True
 
-def validateArgs(patternArg, patternDirArg, sourceArg, sourceDirArg, testerFlag):
+def validateArgs(patternArg, patternDirArg, sourceArg, sourceDirArg):
     """
     Validates the arguments.
 
@@ -252,7 +230,6 @@ def validateArgs(patternArg, patternDirArg, sourceArg, sourceDirArg, testerFlag)
     patternDirArg -- The path to the directory of pattern images
     sourceArg -- The path to the source image
     sourceDirArg -- The path to the directory of source images
-    testerFlag -- True if SPIMS is being run by the tester
 
     Returns False if any arguments are invalid, otherwise 
     returns a tuple containing a list of patterns and a list of sources
@@ -261,22 +238,22 @@ def validateArgs(patternArg, patternDirArg, sourceArg, sourceDirArg, testerFlag)
 
     # Make sure a pattern image is given
     if not patternArg and not patternDirArg:
-        printError('Invalid Arguments. No pattern images provided!', testerFlag)
+        printError('Invalid Arguments. No pattern images provided!')
         return False
  
     # Make sure a source image is given
     if not sourceArg and not sourceDirArg:
-        printError('Invalid Arguments. No source images provided!', testerFlag)
+        printError('Invalid Arguments. No source images provided!')
         return False
 
     # Make sure only one pattern arg is given
     if patternArg and patternDirArg:
-        printError('Invalid Arguments. Must only provide one pattern argument!', testerFlag)
+        printError('Invalid Arguments. Must only provide one pattern argument!')
         return False
 
     # Make sure only one source arg is given
     if sourceArg and sourceDirArg:
-        printError('Invalid Arguments. Must only provide one source argument!', testerFlag)
+        printError('Invalid Arguments. Must only provide one source argument!')
         return False
 
     # Creating lists of all patterns and sources
@@ -292,7 +269,7 @@ def validateArgs(patternArg, patternDirArg, sourceArg, sourceDirArg, testerFlag)
 
     if patternDirArg:
         if not isdir(patternDirArg):
-            printError('Given pattern directory is invalid!', testerFlag)
+            printError('Given pattern directory is invalid!')
             return False
 
         for patternName in listdir(patternDirArg):
@@ -300,14 +277,14 @@ def validateArgs(patternArg, patternDirArg, sourceArg, sourceDirArg, testerFlag)
 
     if sourceDirArg:
         if not isdir(sourceDirArg):
-            printError('Given source directory is invalid!', testerFlag)
+            printError('Given source directory is invalid!')
             return False
 
         for sourceName in listdir(sourceDirArg):
             sources.append(join(sourceDirArg, sourceName))
 
     # Make sure all paths are valid files
-    if allValidTypes(patterns, sources, testerFlag):
+    if allValidTypes(patterns, sources):
         return patterns, sources
 
     return False
@@ -317,19 +294,19 @@ def main(argv):
     patternDirArg = None
     sourceArg = None
     sourceDirArg = None
-    testerFlag = '-t' in argv
     
     if '-p' in argv:
         i = argv.index('-p') + 1
         if len(argv) > i:
             patternArg = argv[i]
 
-    if '-pdir' in argv or '--pdir' in argv:
-        i=-1
-        try:
-            i = argv.index('-pdir') + 1
-        except ValueError:
-            i = argv.index('--pdir') + 1
+    if '-pdir' in argv:
+        i = argv.index('-pdir') + 1
+        if len(argv) > i:
+            patternDirArg = argv[i]
+
+    if '--pdir' in argv:
+        i = argv.index('--pdir') + 1
         if len(argv) > i:
             patternDirArg = argv[i]
 
@@ -338,65 +315,24 @@ def main(argv):
         if len(argv) > i:
             sourceArg = argv[i]
 
-    if '-sdir' in argv or '--sdir' in argv:
-        i=-1
-        try:
-            i = argv.index('-sdir') + 1
-        except ValueError:
-            i = argv.index('--sdir') + 1
+    if '-sdir' in argv:
+        i = argv.index('-sdir') + 1
+        if len(argv) > i:
+            sourceDirArg = argv[i]
+
+    if '--sdir' in argv:
+        i = argv.index('--sdir') + 1
         if len(argv) > i:
             sourceDirArg = argv[i]
 
     argc = len(argv)
     # Handle inputs that aren't standard
     if argc != 4:
-        if argc == 0:
-            #print usage instructions
-            print \
-"""Usage: spims [[-p <file>] | [-pdir <folder> ] | [--pdir <folder> ]] [[-s <file>] | [-sdir <folder> ] | [--sdir <folder> ]]
-
-Examples:
-    ./spims -p <file1> -s <file2>
-
-    ./spims -pdir <dir1> -s <file2>
-
-    ./spims --pdir <dir1> -s <file2>
-
-    ./spims -p <file1> -sdir <dir2>
-
-    ./spims -p <file1> --sdir <dir2>
-
-    ./spims -pdir <dir1> -sdir <dir2>
-
-    ./spims --pdir <dir1> --sdir <dir2>
-
-...where...
-
-    <file1> is the name of an existing file in JPEG, PNG, or
-    GIF format without animation (the "pattern image")
-
-    <file2> is the name of an existing file in JPEG, PNG, or
-    GIF format without animation (the "source image")
-
-    <dir1> is the name of an existing directory that contains
-    no subdirectories and contains only files in JPEG, PNG, or
-    GIF format without animation (the "pattern images")
-
-    <dir2> is the name of an existing directory that contains
-    no subdirectories and contains only files in JPEG, PNG, or
-    GIF format without animation (the "source images")
-"""
-            return 0
-        elif argc == 5:
-            print "Running in test mode..."
-
-        else:
-            printError("Invalid number of arguments specified")
-            return -1
-
+        printError("Invalid number of arguments")
+        return -1
 
     # Validate the arguments and attempt to retrieve the pattern/source paths
-    paths = validateArgs(patternArg, patternDirArg, sourceArg, sourceDirArg, testerFlag)
+    paths = validateArgs(patternArg, patternDirArg, sourceArg, sourceDirArg)
 
     if paths:
         # If path is not false, then it is a tuple of the patterns and sources
@@ -404,11 +340,7 @@ Examples:
 
         try:
             pool = mp.Pool(processes=mp.cpu_count())
-            print pool.map(startMatching_star, itertools.product(patterns, sources))
-
-            #flatresult = [item for sublist in result for item in sublist]
-            #for output in flatresult:
-            #    print output
+            pool.map(startMatching_star, itertools.product(patterns, sources))
         except Exception, errtxt:
             # Error occured while finding a match. Stop and exit.
             print errtxt
@@ -422,4 +354,3 @@ Examples:
 
 if __name__ == "__main__":
     main(sys.argv[1:])
-
