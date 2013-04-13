@@ -21,14 +21,52 @@ MAX_MISSES = 100
 def startMatching_star(p_s):
     startMatching(*p_s)
 
+
 def startMatching(patternArg, sourceArg):
+   
     patternName = patternArg.rpartition('/')[2]
-    patternImg = Image.open(patternArg).convert('L')
+    patternImg = Image.open(patternArg)
+    
+    patternWidth, patternHeight = patternImg.size
 
     sourceName = sourceArg.rpartition('/')[2]
-    sourceImg = Image.open(sourceArg).convert('L')
+    sourceImg = Image.open(sourceArg)
 
-    matchTemplate(patternImg, sourceImg, patternName, sourceName)
+    if(patternWidth == 1 and patternHeight == 1 and False):
+        matchOneByOne(patternImg, sourceImg, patternName, sourceName)
+    else:
+        patternImg = patternImg.convert('L')
+        sourceImg = sourceImg.convert('L')
+        matchTemplate(patternImg, sourceImg, patternName, sourceName)
+
+#TODO
+def matchOneByOne(patternImg, sourceImg, pName, sName):
+    """
+    Attempts to find the pattern image in the source image.
+    
+    Arguments:
+    patternImg -- The loaded pattern image
+    sourceImg -- The loaded source image 
+    patternName -- The path to pattern Image
+    sourceName -- The path to source image    
+
+    """
+
+    sourceWidth, sourceHeight = sourceImg.size
+    patternWidth, patternHeight = patternImg.size
+
+    patternMask = Image.new(mode="L", size=patternImg.size, color=1)
+    
+    for xs in range(sourceWidth+1):
+        for ys in range(sourceHeight+1):
+            sourceCrop = sourceImg.crop((xs,ys,xs+patternWidth,ys+patternHeight))
+            diff = ImageChops.difference(patternImg, sourceCrop)
+            notequal = ImageChops.darker(diff,patternMask)
+            countnotequal = sum(notequal.getdata())
+            
+            if (countnotequal == 0):
+                print "%s matches %s at %ix%i+%i+%i" % (patternName, sourceName, patternWidth, patternHeight, xs, ys)
+
 
 def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain=True):
     """
