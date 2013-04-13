@@ -199,7 +199,7 @@ def normalize(array, imin = -1, imax = 1):
 
     return array
 
-def printError(error, testerFlag):
+def printError(error, testerFlag=False):
     """
     Prints errors after appending 'Error: ' to the front of them.
 
@@ -356,13 +356,12 @@ def main(argv):
         if len(argv) > i:
             patternArg = argv[i]
 
-    if '-pdir' in argv:
-        i = argv.index('-pdir') + 1
-        if len(argv) > i:
-            patternDirArg = argv[i]
-
-    if '--pdir' in argv:
-        i = argv.index('--pdir') + 1
+    if '-pdir' in argv or '--pdir' in argv:
+        i=-1
+        try:
+            i = argv.index('-pdir') + 1
+        except ValueError:
+            i = argv.index('--pdir') + 1
         if len(argv) > i:
             patternDirArg = argv[i]
 
@@ -371,15 +370,62 @@ def main(argv):
         if len(argv) > i:
             sourceArg = argv[i]
 
-    if '-sdir' in argv:
-        i = argv.index('-sdir') + 1
+    if '-sdir' in argv or '--sdir' in argv:
+        i=-1
+        try:
+            i = argv.index('-sdir') + 1
+        except ValueError:
+            i = argv.index('--sdir') + 1
         if len(argv) > i:
             sourceDirArg = argv[i]
 
-    if '--sdir' in argv:
-        i = argv.index('--sdir') + 1
-        if len(argv) > i:
-            sourceDirArg = argv[i]
+    argc = len(argv)
+    # Handle inputs that aren't standard
+    if argc != 4:
+        if argc == 0:
+            #print usage instructions
+            print \
+"""Usage: spims [[-p <file>] | [-pdir <folder> ] | [--pdir <folder> ]] [[-s <file>] | [-sdir <folder> ] | [--sdir <folder> ]]
+
+Examples:
+    ./spims -p <file1> -s <file2>
+
+    ./spims -pdir <dir1> -s <file2>
+
+    ./spims --pdir <dir1> -s <file2>
+
+    ./spims -p <file1> -sdir <dir2>
+
+    ./spims -p <file1> --sdir <dir2>
+
+    ./spims -pdir <dir1> -sdir <dir2>
+
+    ./spims --pdir <dir1> --sdir <dir2>
+
+...where...
+
+    <file1> is the name of an existing file in JPEG, PNG, or
+    GIF format without animation (the "pattern image")
+
+    <file2> is the name of an existing file in JPEG, PNG, or
+    GIF format without animation (the "source image")
+
+    <dir1> is the name of an existing directory that contains
+    no subdirectories and contains only files in JPEG, PNG, or
+    GIF format without animation (the "pattern images")
+
+    <dir2> is the name of an existing directory that contains
+    no subdirectories and contains only files in JPEG, PNG, or
+    GIF format without animation (the "source images")
+"""
+            return 0
+        elif argc == 5:
+            print "Running in test mode..."
+
+        else:
+            printError("Invalid number of arguments specified")
+            return -1
+
 
     # Validate the arguments and attempt to retrieve the pattern/source paths
     paths = validateArgs(patternArg, patternDirArg, sourceArg, sourceDirArg, testerFlag)
