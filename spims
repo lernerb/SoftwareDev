@@ -15,7 +15,7 @@ from os.path import isdir, join
 
 # Global Variables
 SMALL_CONFIDENCE_INTERVAL = .95
-LARGE_CONFIDENCE_INTERVAL = .7
+LARGE_CONFIDENCE_INTERVAL = .2
 ACCEPTABLE_OVERLAP = .5
 MAX_MISSES = 10
 
@@ -160,9 +160,8 @@ def matchSmallTemplate(patternImage, sourceImage, pName, sName):
             score -= countnotequal
 
             inConfidenceRange = score >= (patternWidth * patternHeight * SMALL_CONFIDENCE_INTERVAL)
-            overlapping = isOverlappingMatch(foundMatches, xs, ys, patternWidth, patternHeight)
 
-            if inConfidenceRange and not overlapping:    
+            if inConfidenceRange and not isOverlappingMatch(foundMatches, xs, ys, patternWidth, patternHeight):    
                 foundMatches.append(([xs, ys], patternWidth, patternHeight))
                 matchStrings.append("%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys))
 
