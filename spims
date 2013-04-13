@@ -6,7 +6,6 @@ import itertools
 import cmath
 import numpy as np
 import multiprocessing as mp
-import scipy.ndimage.filters as filters
 from numpy.linalg import norm
 from scipy import signal, ndimage
 from PIL import Image, ImageChops
