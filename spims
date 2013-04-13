@@ -15,9 +15,9 @@ from os.path import isdir, join
 
 # Global Variables
 SMALL_CONFIDENCE_INTERVAL = .95
-LARGE_CONFIDENCE_INTERVAL = .2
+LARGE_CONFIDENCE_INTERVAL = .03
 ACCEPTABLE_OVERLAP = .5
-MAX_MISSES = 10
+MAX_MISSES = 100
 
 """
 Notes from presentations:
@@ -36,7 +36,7 @@ Robustness:
 """
 
 def startMatching_star(p_s):
-    return startMatching(*p_s)
+    startMatching(*p_s)
 
 def startMatching(patternArg, sourceArg):
     patternName = patternArg.rpartition('/')[2]
@@ -45,7 +45,7 @@ def startMatching(patternArg, sourceArg):
     sourceName = sourceArg.rpartition('/')[2]
     sourceImg = Image.open(sourceArg).convert('L')
 
-    return matchTemplate(patternImg, sourceImg, patternName, sourceName)
+    matchTemplate(patternImg, sourceImg, patternName, sourceName)
 
 def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain=True):
     """
@@ -74,35 +74,30 @@ def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain
     sourceWidth, sourceHeight = sourceImg.size
     patternWidth, patternHeight = patternImg.size
 
-    if ((patternWidth <= 10 and patternHeight <= 10 and sourceWidth <= 10 and sourceHeight <= 10)):
-        return matchSmallTemplate(patternImg, sourceImg, pName, sName)
+    if (patternWidth <= 10 and patternHeight <= 10 and sourceWidth <= 10 and sourceHeight <= 10):
+        matchSmallTemplate(patternImg, sourceImg, pName, sName)
     else:
         # FFT using a Normalized Cross Correlation
-        matchStrings = []
         template_mean = np.mean(numpyPattern)
         numpyPattern -= template_mean
         corr = np.ascontiguousarray(signal.fftconvolve(numpySource, numpyPattern[::-1, ::-1], mode="valid"), 
                                     dtype=np.float32)
 
-        maxValue = 10
-        minValue = 0
+        misses = 0
 
-        while (minValue <  maxValue):
+        while (misses <  MAX_MISSES):
             ij = np.unravel_index(corr.argmax(), corr.shape)
             m_xs, m_ys = ij[::-1]
-            confirm = isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg)
             overlapping = isOverlappingMatch(foundMatches,m_xs, m_ys, patternWidth, patternHeight)
 
-            if confirm and not overlapping:
+            if not overlapping and isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg):
                 foundMatches.append(([m_xs, m_ys], patternWidth, patternHeight))
-                matchStrings.append("%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, m_xs, m_ys))
+                print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, m_xs, m_ys)
             
             if not overlapping:
-                minValue = minValue + 1
+                misses = misses + 1
             
             corr[ij] = 0
-
-        return matchStrings
 
 def isConfirmedMatch(xs, ys, sourceImage, patternImage):
     sourceWidth, sourceHeight = sourceImage.size
@@ -119,17 +114,6 @@ def isConfirmedMatch(xs, ys, sourceImage, patternImage):
     countnotequal = sum(notequal.getdata())
     score -= countnotequal
     return score >= (patternWidth * patternHeight * LARGE_CONFIDENCE_INTERVAL)
-
-def fillWithRandom(image, x1, y1, x2, y2):
-    """
-    Fills the given image from (x1,y1) to (x2, y2) with random data (looks like static)
-
-    """
-    
-    imarray = np.random.rand(x2-x1,y2-y1,3) * 255
-    im = Image.fromarray(imarray.astype('uint8')).convert('RGBA')
-    image.paste(im, (x1, y1))
-    return image      
      
 def matchSmallTemplate(patternImage, sourceImage, pName, sName):
     """
@@ -144,7 +128,6 @@ def matchSmallTemplate(patternImage, sourceImage, pName, sName):
     """
 
     foundMatches = []
-    matchStrings = []
 
     sourceWidth, sourceHeight = sourceImage.size
     patternWidth, patternHeight = patternImage.size
@@ -163,9 +146,7 @@ def matchSmallTemplate(patternImage, sourceImage, pName, sName):
 
             if inConfidenceRange and not isOverlappingMatch(foundMatches, xs, ys, patternWidth, patternHeight):    
                 foundMatches.append(([xs, ys], patternWidth, patternHeight))
-                matchStrings.append("%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys))
-
-    return matchStrings
+                print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)
 
 def isOverlappingMatch (matches, x, y, width, height):
     for match in matches:
@@ -185,22 +166,6 @@ def isOverlappingMatch (matches, x, y, width, height):
         if ((x_overlap * y_overlap) >= ((width * height) * ACCEPTABLE_OVERLAP)):
             return True
     return False
-    
-        
-def normalize(array, imin = -1, imax = 1):
-    """
-    I = Imin + (Imax-Imin)*(D-Dmin)/(Dmax-Dmin)
-
-    """
-
-    dmin = array.min()
-    dmax = array.max()
-    array -= dmin;
-    array *= (imax - imin)
-    array /= (dmax-dmin)
-    array += imin
-
-    return array
 
 def printError(error, testerFlag=False):
     """
@@ -439,10 +404,11 @@ Examples:
 
         try:
             pool = mp.Pool(processes=mp.cpu_count())
-            result = pool.map(startMatching_star, itertools.product(patterns, sources))
-            flatresult = [item for sublist in result for item in sublist]
-            for output in flatresult:
-                print output
+            print pool.map(startMatching_star, itertools.product(patterns, sources))
+
+            #flatresult = [item for sublist in result for item in sublist]
+            #for output in flatresult:
+            #    print output
         except Exception, errtxt:
             # Error occured while finding a match. Stop and exit.
             print errtxt
