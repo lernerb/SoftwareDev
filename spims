@@ -50,11 +50,34 @@ def matchOneByOne(patternImage, sourceImage, pName, sName):
     sName -- The path to source image    
 
     """
-    pixel = np.asarray(patternImage)
+    #pixel = np.asarray(patternImage)
     sourceWidth, sourceHeight = sourceImage.size
     patternWidth, patternHeight = patternImage.size
-    patternMask = Image.new(mode="RGB", size=patternImage.size, color=1)
-    
+    #patternMask = Image.new(mode="RGB", size=patternImage.size, color=1)
+
+    newPatternImage = patternImage.convert('I')
+    newSourceImage = sourceImage.convert('I')
+
+    sourceNumpy = np.asarray(newSourceImage)
+    patternNumpy = np.asarray(newPatternImage)
+
+    indices = np.where( sourceNumpy == patternNumpy )
+    ind2d = zip(indices[0], indices[1])
+
+    for (ys,xs) in ind2d:
+        
+        sourceCrop = sourceImage.crop((xs,ys,xs+patternWidth,ys+patternHeight))                                                                                                                       
+        diff = ImageChops.difference(patternImage.convert('RGB'), sourceCrop.convert('RGB'))                                                                                                          
+        diffArray = np.asarray(diff)                                                                                                                                                                  
+        
+        if (diffArray == (0,0,0)).all():                                                                                                                                                              
+                print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)    
+
+        #print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)
+
+
+
+"""
     for xs in range(sourceWidth-patternWidth+1):
         for ys in range(sourceHeight-patternHeight+1):
 
@@ -65,6 +88,7 @@ def matchOneByOne(patternImage, sourceImage, pName, sName):
 
             if (diffArray == (0,0,0)).all():
                 print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)
+"""
 
 def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain=True):
     """
