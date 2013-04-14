@@ -41,17 +41,6 @@ where:
  * `<file2>` is the name of an existing file in JPEG, PNG or GIF format
    without animation (the "source image")
  * `<dir1>` is the name of an existing directory that contains no
-   no subdirecories and contains only files in JPEG, PNG or GIF format without
-   animation (the "pattern images")
+   no subdirecories and contains only files in JPEG, PNG or GIF format
  * `<dir2>` is the name of an existing directory that contains no
-   subdirecories and contains only files in JPEG, PNG or GIF format without
-   animation (the "source images")
-
-
-##### Additional notes
-It was discussed with Prof. Clinger on Feb 12 that additional line returns 
-at the end of the execution of the program do not matter.
-
-##### Software Credits
- * Python 2.6 
-
+   subdirecories and contains only files in JPEG, PNG or GIF format 
