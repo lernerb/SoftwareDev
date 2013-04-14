@@ -16,14 +16,30 @@ from os.path import isdir, join
 SMALL_CONFIDENCE_INTERVAL = .95
 LARGE_CONFIDENCE_INTERVAL = .03
 ACCEPTABLE_OVERLAP = .5
-MAX_MISSES = 1
+MAX_MISSES = 5
+LARGE_IMAGE_SIZE = 1000
+
 
 def startMatching_star(p_s):
+    """
+    Array of tuples that will be used by threading to find matches
+
+    Arguments:
+    p_s -- A tuple containing all of the possible pattern/source combinations
+
+    """
     startMatching(*p_s)
 
 
 def startMatching(patternArg, sourceArg):
-   
+    """
+    Finds the images on the file system, and sends the image to the correct 
+    function based upon the images characteristics
+
+    Arguments:
+    patternArg: Full path to the pattern image on the file system
+    sourceArg: Full path to the source image on the file system
+    """
     patternName = patternArg.rpartition('/')[2]
     patternImg = Image.open(patternArg)
     
@@ -63,16 +79,14 @@ def matchOneByOne(patternImage, sourceImage, pName, sName):
     ind2d = zip(indices[0], indices[1])
 
     for (ys,xs) in ind2d:
-        
-        sourceCrop = sourceImage.crop((xs,ys,xs+patternWidth,ys+patternHeight))                                                                                                                       
-        diff = ImageChops.difference(patternImage.convert('RGB'), sourceCrop.convert('RGB'))                                                                                                          
-        diffArray = np.asarray(diff)                                                                                                                                                                  
-        
-        if (diffArray == (0,0,0)).all():                                                                                                                                                              
+        sourceCrop = sourceImage.crop((xs,ys,xs+patternWidth,ys+patternHeight))                                   
+        diff = ImageChops.difference(patternImage.convert('RGB'), sourceCrop.convert('RGB'))                      
+        diffArray = np.asarray(diff)                                                                     
+        if (diffArray == (0,0,0)).all():                                                                          
                 print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)    
 
 
-def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain=True):
+def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[]):
     """
     Attempts to find the pattern image in the source image.
 
@@ -107,7 +121,7 @@ def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain
         numpyPattern -= template_mean
         corr = np.ascontiguousarray(signal.fftconvolve(numpySource, numpyPattern[::-1, ::-1], mode="valid"), 
                                     dtype=np.float32)
-
+        
         misses = 0
 
         while (misses <  MAX_MISSES):
@@ -115,16 +129,30 @@ def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain
             m_xs, m_ys = ij[::-1]
             overlapping = isOverlappingMatch(foundMatches,m_xs, m_ys, patternWidth, patternHeight)
 
-            if not overlapping and isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg):
+            if not overlapping and isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg, pName, sName):
                 foundMatches.append(([m_xs, m_ys], patternWidth, patternHeight))
-                print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, m_xs, m_ys)
             
             if not overlapping:
                 misses = misses + 1
-            
-            corr[ij] = 0
 
-def isConfirmedMatch(xs, ys, sourceImage, patternImage):
+            corr[ij[0]:ij[0]+patternHeight/2, ij[1]:ij[1]+patternWidth/2] = 0
+
+
+def isConfirmedMatch(xs, ys, sourceImage, patternImage, pName, sName):
+    """
+    Attempts to find the pattern image in the source image.
+
+    Arguments:
+    xs - A potential match to confirm on the x axis
+    ys - A potential match to confirm on the y axis
+    patternImg -- The loaded pattern image
+    sourceImg -- The loaded source image 
+    pName -- The path to pattern Image
+    sName -- The path to source image
+
+    Returns True if completed successfully AND match found
+
+    """
     sourceWidth, sourceHeight = sourceImage.size
     patternWidth, patternHeight = patternImage.size
     patternMask = Image.new(mode="L", size=patternImage.size, color=1)
@@ -138,8 +166,20 @@ def isConfirmedMatch(xs, ys, sourceImage, patternImage):
     notequal = ImageChops.darker(diff,patternMask)
     countnotequal = sum(notequal.getdata())
     score -= countnotequal
-    return score >= (patternWidth * patternHeight * LARGE_CONFIDENCE_INTERVAL)
-     
+
+    ourScore = (patternWidth * patternHeight * LARGE_CONFIDENCE_INTERVAL)
+
+    if (sourceWidth > LARGE_IMAGE_SIZE and sourceHeight > LARGE_IMAGE_SIZE and (score >= ourScore)):
+        if (score >= ourScore*5):
+            print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)
+        return True
+    elif (score >= ourScore):
+        print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)
+        return True
+    else: 
+        return False
+
+
 def matchSmallTemplate(patternImage, sourceImage, pName, sName):
     """
     Attempts to find the pattern image in the source image.
@@ -174,6 +214,17 @@ def matchSmallTemplate(patternImage, sourceImage, pName, sName):
                 print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)
 
 def isOverlappingMatch (matches, x, y, width, height):
+    """
+    Attempts to find the pattern image in the source image.
+    
+    Arguments:
+    matches -- The array of past found matches
+    x -- the location on the x axis of a possible match
+    y -- the location on the y axis of a possible match
+    width -- the width of the pattern image
+    height -- the height of the pattern image
+
+    """
     for match in matches:
         x11 = match[0][0]
         y11 = match[0][1]
