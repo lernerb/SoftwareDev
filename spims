@@ -19,7 +19,6 @@ ACCEPTABLE_OVERLAP = .5
 MAX_MISSES = 5
 LARGE_IMAGE_SIZE = 1000
 
-
 def startMatching_star(p_s):
     """
     Unpacks the provided tuple and uses the resulting arguments to startMatching
@@ -69,7 +68,6 @@ def matchOneByOne(patternImage, sourceImage, pName, sName):
     sName -- The path to source image    
 
     """
-    sourceWidth, sourceHeight = sourceImage.size
     patternWidth, patternHeight = patternImage.size
 
     newPatternImage = patternImage.convert('I')
@@ -86,8 +84,7 @@ def matchOneByOne(patternImage, sourceImage, pName, sName):
         diff = ImageChops.difference(patternImage.convert('RGB'), sourceCrop.convert('RGB'))                      
         diffArray = np.asarray(diff)                                                                     
         if (diffArray == (0,0,0)).all():
-            print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)    
-
+            print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)  
 
 def matchTemplate(patternImg, sourceImg, pName, sName):
     """
@@ -130,8 +127,8 @@ def matchTemplate(patternImg, sourceImg, pName, sName):
         if not isOverlappingMatch(foundMatches, m_xs, m_ys, patternWidth, patternHeight):
             if isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg, pName, sName):
                 foundMatches.append(([m_xs, m_ys], patternWidth, patternHeight))
-            else:
-                misses += 1
+            
+            misses += 1
 
         corr[ij[0]:ij[0]+patternHeight/2, ij[1]:ij[1]+patternWidth/2] = 0
 
@@ -175,7 +172,6 @@ def isConfirmedMatch(xs, ys, sourceImage, patternImage, pName, sName):
         return True
     else: 
         return False
-
 
 def matchSmallTemplate(patternImage, sourceImage, pName, sName):
     """
@@ -430,8 +426,6 @@ def main(argv):
             pool.map(startMatching_star, itertools.product(patterns, sources))
         except Exception, errtxt:
             # Error occured while finding a match. Stop and exit.
-            printError('An exception occured while trying to find a match!')
-            print errtxt
             return -1
     else:
         # Arguments are invalid
