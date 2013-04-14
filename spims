@@ -16,7 +16,7 @@ from os.path import isdir, join
 SMALL_CONFIDENCE_INTERVAL = .95
 LARGE_CONFIDENCE_INTERVAL = .03
 ACCEPTABLE_OVERLAP = .5
-MAX_MISSES = 1
+MAX_MISSES = 10
 
 def startMatching_star(p_s):
     startMatching(*p_s)
@@ -71,19 +71,6 @@ def matchOneByOne(patternImage, sourceImage, pName, sName):
         if (diffArray == (0,0,0)).all():                                                                                                                                                              
                 print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)    
 
-
-"""
-    for xs in range(sourceWidth-patternWidth+1):
-        for ys in range(sourceHeight-patternHeight+1):
-
-            score = patternWidth*patternHeight
-            sourceCrop = sourceImage.crop((xs,ys,xs+patternWidth,ys+patternHeight))            
-            diff = ImageChops.difference(patternImage.convert('RGB'), sourceCrop.convert('RGB'))
-            diffArray = np.asarray(diff)
-
-            if (diffArray == (0,0,0)).all():
-                print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)
-"""
 
 def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[], tryAgain=True):
     """
