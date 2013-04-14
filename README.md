@@ -47,11 +47,3 @@ where:
    subdirecories and contains only files in JPEG, PNG or GIF format without
    animation (the "source images")
 
-
-##### Additional notes
-It was discussed with Prof. Clinger on Feb 12 that additional line returns 
-at the end of the execution of the program do not matter.
-
-##### Software Credits
- * Python 2.6 
-
