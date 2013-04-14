@@ -22,14 +22,13 @@ LARGE_IMAGE_SIZE = 1000
 
 def startMatching_star(p_s):
     """
-    Array of tuples that will be used by threading to find matches
+    Unpacks the provided tuple and uses the resulting arguments to startMatching
 
     Arguments:
-    p_s -- A tuple containing all of the possible pattern/source combinations
+    p_s -- A tuple containing one pattern/source combination
 
     """
     startMatching(*p_s)
-
 
 def startMatching(patternArg, sourceArg):
     """
@@ -42,18 +41,22 @@ def startMatching(patternArg, sourceArg):
     """
     patternName = patternArg.rpartition('/')[2]
     patternImg = Image.open(patternArg)
-    
     patternWidth, patternHeight = patternImg.size
 
     sourceName = sourceArg.rpartition('/')[2]
     sourceImg = Image.open(sourceArg)
+    sourceWidth, sourceHeight = sourceImg.size
 
-    if(patternWidth == 1 and patternHeight == 1):
+    if (patternWidth == 1 and patternHeight == 1):
         matchOneByOne(patternImg, sourceImg, patternName, sourceName)
     else:
         patternImg = patternImg.convert('L')
         sourceImg = sourceImg.convert('L')
-        matchTemplate(patternImg, sourceImg, patternName, sourceName)
+
+        if (patternWidth <= 10 and patternHeight <= 10 and sourceWidth <=10 and sourceHeight <=10):
+            matchSmallTemplate(patternImg, sourceImg, patternName, sourceName)
+        else:
+            matchTemplate(patternImg, sourceImg, patternName, sourceName)
 
 def matchOneByOne(patternImage, sourceImage, pName, sName):
     """
@@ -82,11 +85,11 @@ def matchOneByOne(patternImage, sourceImage, pName, sName):
         sourceCrop = sourceImage.crop((xs,ys,xs+patternWidth,ys+patternHeight))                                   
         diff = ImageChops.difference(patternImage.convert('RGB'), sourceCrop.convert('RGB'))                      
         diffArray = np.asarray(diff)                                                                     
-        if (diffArray == (0,0,0)).all():                                                                          
-                print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)    
+        if (diffArray == (0,0,0)).all():
+            print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)    
 
 
-def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[]):
+def matchTemplate(patternImg, sourceImg, pName, sName):
     """
     Attempts to find the pattern image in the source image.
 
@@ -109,34 +112,28 @@ def matchTemplate(patternImg, sourceImg, pName, sName, foundMatches=[]):
     numpyPattern.flags.writeable = True
     numpyPattern = np.ascontiguousarray(numpyPattern, dtype=np.float32)
 
-    # Get the original sizes of both images for normalization
-    sourceWidth, sourceHeight = sourceImg.size
+    # Get the original sizes of the pattern image
     patternWidth, patternHeight = patternImg.size
 
-    if (patternWidth <= 10 and patternHeight <= 10 and sourceWidth <= 10 and sourceHeight <= 10):
-        matchSmallTemplate(patternImg, sourceImg, pName, sName)
-    else:
-        # FFT using a Normalized Cross Correlation
-        template_mean = np.mean(numpyPattern)
-        numpyPattern -= template_mean
-        corr = np.ascontiguousarray(signal.fftconvolve(numpySource, numpyPattern[::-1, ::-1], mode="valid"), 
-                                    dtype=np.float32)
-        
-        misses = 0
+    # FFT using a Normalized Cross Correlation
+    template_mean = np.mean(numpyPattern)
+    numpyPattern -= template_mean
+    corr = np.ascontiguousarray(signal.fftconvolve(numpySource, numpyPattern[::-1, ::-1], mode="valid"), 
+                                dtype=np.float32)
+    
+    foundMatches = []    
+    misses = 0
+    while (misses <  MAX_MISSES):
+        ij = np.unravel_index(corr.argmax(), corr.shape)
+        m_xs, m_ys = ij[::-1]
 
-        while (misses <  MAX_MISSES):
-            ij = np.unravel_index(corr.argmax(), corr.shape)
-            m_xs, m_ys = ij[::-1]
-            overlapping = isOverlappingMatch(foundMatches,m_xs, m_ys, patternWidth, patternHeight)
-
-            if not overlapping and isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg, pName, sName):
+        if not isOverlappingMatch(foundMatches, m_xs, m_ys, patternWidth, patternHeight):
+            if isConfirmedMatch(m_xs, m_ys, sourceImg, patternImg, pName, sName):
                 foundMatches.append(([m_xs, m_ys], patternWidth, patternHeight))
-            
-            if not overlapping:
-                misses = misses + 1
+            else:
+                misses += 1
 
-            corr[ij[0]:ij[0]+patternHeight/2, ij[1]:ij[1]+patternWidth/2] = 0
-
+        corr[ij[0]:ij[0]+patternHeight/2, ij[1]:ij[1]+patternWidth/2] = 0
 
 def isConfirmedMatch(xs, ys, sourceImage, patternImage, pName, sName):
     """
@@ -250,8 +247,7 @@ def printError(error):
     Arguments:
     error -- The error string to be printed
 
-    Errors are normally printed to standard error, but if SPIMS is 
-    being run by the tester they are printed to standard out.
+    Errors are printed to standard error.
 
     """
 
@@ -386,42 +382,41 @@ def main(argv):
     patternDirArg = None
     sourceArg = None
     sourceDirArg = None
+    argc = len(argv)
+
+    if argc != 4:
+        printError('Must provide exactly one pattern argument and one source argument!')
+        return -1
     
     if '-p' in argv:
         i = argv.index('-p') + 1
-        if len(argv) > i:
+        if argc > i:
             patternArg = argv[i]
 
     if '-pdir' in argv:
         i = argv.index('-pdir') + 1
-        if len(argv) > i:
+        if argc > i:
             patternDirArg = argv[i]
 
     if '--pdir' in argv:
         i = argv.index('--pdir') + 1
-        if len(argv) > i:
+        if argc > i:
             patternDirArg = argv[i]
 
     if '-s' in argv:
         i = argv.index('-s') + 1
-        if len(argv) > i:
+        if argc > i:
             sourceArg = argv[i]
 
     if '-sdir' in argv:
         i = argv.index('-sdir') + 1
-        if len(argv) > i:
+        if argc > i:
             sourceDirArg = argv[i]
 
     if '--sdir' in argv:
         i = argv.index('--sdir') + 1
-        if len(argv) > i:
+        if argc > i:
             sourceDirArg = argv[i]
-
-    argc = len(argv)
-    # Handle inputs that aren't standard
-    if argc != 4:
-        printError("Invalid number of arguments")
-        return -1
 
     # Validate the arguments and attempt to retrieve the pattern/source paths
     paths = validateArgs(patternArg, patternDirArg, sourceArg, sourceDirArg)
@@ -435,6 +430,7 @@ def main(argv):
             pool.map(startMatching_star, itertools.product(patterns, sources))
         except Exception, errtxt:
             # Error occured while finding a match. Stop and exit.
+            printError('An exception occured while trying to find a match!')
             print errtxt
             return -1
     else:
