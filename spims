@@ -16,7 +16,7 @@ from os.path import isdir, join
 SMALL_CONFIDENCE_INTERVAL = .95
 LARGE_CONFIDENCE_INTERVAL = .03
 ACCEPTABLE_OVERLAP = .5
-MAX_MISSES = 10
+MAX_MISSES = 1
 
 def startMatching_star(p_s):
     startMatching(*p_s)
