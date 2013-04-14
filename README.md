@@ -41,9 +41,6 @@ where:
  * `<file2>` is the name of an existing file in JPEG, PNG or GIF format
    without animation (the "source image")
  * `<dir1>` is the name of an existing directory that contains no
-   no subdirecories and contains only files in JPEG, PNG or GIF format without
-   animation (the "pattern images")
+   no subdirecories and contains only files in JPEG, PNG or GIF format
  * `<dir2>` is the name of an existing directory that contains no
-   subdirecories and contains only files in JPEG, PNG or GIF format without
-   animation (the "source images")
-
+   subdirecories and contains only files in JPEG, PNG or GIF format 
