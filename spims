@@ -16,7 +16,7 @@ from os.path import isdir, join
 SMALL_CONFIDENCE_INTERVAL = .95
 LARGE_CONFIDENCE_INTERVAL = .03
 ACCEPTABLE_OVERLAP = .5
-MAX_MISSES = 100
+MAX_MISSES = 1
 
 def startMatching_star(p_s):
     startMatching(*p_s)
@@ -50,10 +50,8 @@ def matchOneByOne(patternImage, sourceImage, pName, sName):
     sName -- The path to source image    
 
     """
-    #pixel = np.asarray(patternImage)
     sourceWidth, sourceHeight = sourceImage.size
     patternWidth, patternHeight = patternImage.size
-    #patternMask = Image.new(mode="RGB", size=patternImage.size, color=1)
 
     newPatternImage = patternImage.convert('I')
     newSourceImage = sourceImage.convert('I')
@@ -72,9 +70,6 @@ def matchOneByOne(patternImage, sourceImage, pName, sName):
         
         if (diffArray == (0,0,0)).all():                                                                                                                                                              
                 print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)    
-
-        #print "%s matches %s at %ix%i+%i+%i" % (pName, sName, patternWidth, patternHeight, xs, ys)
-
 
 
 """
