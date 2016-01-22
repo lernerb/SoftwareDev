@@ -4,10 +4,10 @@
 #### Course Website: http://www.ccs.neu.edu/course/cs4500wc/
 
 ##### Authors - Emails
- * Brandon Lerner - lernerbrandon@gmail.com
- * Nathan Heaps - nsheaps@gmail.com
- * Lennon Acosta - lacosta@ccs.neu.edu
- * Jayson Ng - jaysonzeon@gmail.com
+ * Brandon Lerner - lernerb()ccs.com
+ * Nathan Heaps - nsheaps()gmail.com
+ * Lennon Acosta - lacosta()ccs.neu.edu
+ * Jayson Ng - jaysonzeon()gmail.com
 
 ##### Compiling
 No additional compiling is required in order to run the sofware (python).
